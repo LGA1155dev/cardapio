@@ -325,7 +325,11 @@ function useParticles(count = 14) {
 export default function Login() {
   const navigate = useNavigate();
   const { login, registerAndLogin, loading, error } = useAuth();
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("cardapio-theme");
+    if (saved === "dark" || saved === "light") return saved;
+    return "dark";
+  });
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -340,6 +344,10 @@ export default function Login() {
   const spotRef = useRef(null);
   const rafRef = useRef(null);
   const particles = useParticles(14);
+
+  useEffect(() => {
+    localStorage.setItem("cardapio-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -470,6 +478,7 @@ export default function Login() {
           className="ll-theme-btn"
           onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
           aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+          title={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
         >
           <span className="ll-theme-icon-enter" key={theme}>
             {theme === "dark" ? <Sun /> : <Moon />}

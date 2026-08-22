@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../services/api";
 import "./Admin.css";
@@ -17,6 +17,11 @@ const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&q=85";
 
 export default function Admin() {
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("cardapio-theme");
+    if (saved === "dark" || saved === "light") return saved;
+    return "dark";
+  });
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dayWeek, setDayWeek] = useState("Segunda-feira");
@@ -27,6 +32,10 @@ export default function Admin() {
   const [saving, setSaving] = useState(false);
 
   const previewImage = imageUrl || DEFAULT_IMAGE;
+
+  useEffect(() => {
+    localStorage.setItem("cardapio-theme", theme);
+  }, [theme]);
 
   const preview = useMemo(
     () => ({
@@ -96,7 +105,7 @@ export default function Admin() {
   }
 
   return (
-    <main className="admin-page">
+    <main className={`admin-page admin-page--${theme}`}>
       <header className="admin-topbar">
         <Link className="admin-back" to="/refeicao">
           Voltar
@@ -105,6 +114,15 @@ export default function Admin() {
           <p className="admin-kicker">Painel do Admin</p>
           <h1>Publicar comida</h1>
         </div>
+        <button
+          type="button"
+          className="admin-theme"
+          onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+          aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+          title={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
       </header>
 
       <section className="admin-shell">

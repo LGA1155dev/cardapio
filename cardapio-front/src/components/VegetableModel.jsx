@@ -7,7 +7,7 @@ import { Box3, MathUtils, Vector3 } from "three";
 const MODEL_PATH = "/models/vegetables.glb";
 
 function getInitialQuality() {
-  if (typeof window === "undefined") return { dpr: 1.5, shadows: true };
+  if (typeof window === "undefined") return { dpr: 1.5, shadows: true, reducedMotion: false };
 
   const memory = navigator.deviceMemory || 4;
   const cores = navigator.hardwareConcurrency || 4;
@@ -18,6 +18,7 @@ function getInitialQuality() {
   return {
     dpr: isWeakDevice ? 1 : Math.min(window.devicePixelRatio || 1, 1.75),
     shadows: !isWeakDevice,
+    reducedMotion: prefersReducedMotion,
   };
 }
 
@@ -92,7 +93,7 @@ function VegetableScene({ quality, pointerRef }) {
     const elapsed = state.clock.elapsedTime;
     const motion = motionRef.current;
     const pointer = pointerRef.current;
-    const autoSpeed = quality.shadows ? 0.16 : 0.11;
+    const autoSpeed = quality.reducedMotion ? 0 : quality.shadows ? 0.16 : 0.11;
     const pointerEase = 0.08 + pointer.force * 0.08;
 
     groupRef.current.rotation.y += delta * autoSpeed;
@@ -238,7 +239,7 @@ export default function VegetableModel() {
         shadows={quality.shadows}
       >
         <PerformanceMonitor
-          onDecline={() => setQuality({ dpr: 1, shadows: false })}
+          onDecline={() => setQuality((current) => ({ ...current, dpr: 1, shadows: false }))}
           onIncline={() => setQuality((current) => ({ ...current, dpr: Math.min(1.5, current.dpr + 0.15) }))}
         />
         <ambientLight intensity={1.25} />

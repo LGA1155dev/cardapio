@@ -296,6 +296,7 @@ const CSS = `
 .pl-root.dark .pl-modal,.pl-root.dark .pl-edit{border-color:rgba(147,197,253,.18)}
 .pl-undo{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:600;background:var(--forest-deep);color:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 18px 42px rgba(0,0,0,.28);display:flex;align-items:center;gap:18px;max-width:min(92vw,560px)}.pl-undo strong{display:block;font-size:13px}.pl-undo span{display:block;font-size:11px;color:rgba(255,255,255,.7);margin-top:2px}.pl-undo button{background:var(--mustard);color:var(--forest-deep);border-radius:999px;padding:9px 12px;font-size:11px;font-weight:800;white-space:nowrap}.pl-undo--error{background:#7f1d1d}
 @media(max-width:560px){.pl-edit-grid,.pl-modal-stats,.pl-s-row{grid-template-columns:1fr}.pl-modal-img{height:210px}.pl-modal-title h2{font-size:24px}.pl-undo{align-items:flex-start;flex-direction:column;bottom:76px}.pl-undo button{width:100%}}
+@media(prefers-reduced-motion:reduce){.pl-root *{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}.pl-week-card,.pl-d-card{opacity:1;transform:none}}
 `;
 
 function useReveal() {

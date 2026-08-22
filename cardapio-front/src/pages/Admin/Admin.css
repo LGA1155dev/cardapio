@@ -1,20 +1,56 @@
 .admin-page {
+  --admin-bg-a: #070a12;
+  --admin-bg-b: #10131c;
+  --admin-bg-c: #0c1118;
+  --admin-panel: rgba(15, 23, 42, 0.72);
+  --admin-panel-solid: #111827;
+  --admin-text: #f8fafc;
+  --admin-soft: #cbd5e1;
+  --admin-muted: #94a3b8;
+  --admin-blue: #60a5fa;
+  --admin-accent: #34d399;
+  --admin-line: rgba(148, 163, 184, 0.22);
+  --admin-field: rgba(2, 6, 23, 0.52);
+  --admin-focus: rgba(96, 165, 250, 0.16);
   min-height: 100vh;
   padding: 34px clamp(18px, 4vw, 56px) 56px;
   background:
-    radial-gradient(circle at 12% 10%, rgba(16, 185, 129, 0.15), transparent 28%),
+    radial-gradient(circle at 12% 10%, rgba(96, 165, 250, 0.15), transparent 28%),
     radial-gradient(circle at 88% 6%, rgba(96, 165, 250, 0.18), transparent 30%),
-    linear-gradient(135deg, #070a12 0%, #10131c 45%, #0c1118 100%);
-  color: #f8fafc;
+    linear-gradient(135deg, var(--admin-bg-a) 0%, var(--admin-bg-b) 45%, var(--admin-bg-c) 100%);
+  color: var(--admin-text);
   font-family: "DM Sans", system-ui, sans-serif;
   cursor: auto;
 }
 
+.admin-page--light {
+  --admin-bg-a: #f8fbff;
+  --admin-bg-b: #eef5ff;
+  --admin-bg-c: #e7f0ff;
+  --admin-panel: rgba(255, 255, 255, 0.92);
+  --admin-panel-solid: #ffffff;
+  --admin-text: #0f2747;
+  --admin-soft: #475b74;
+  --admin-muted: #72829a;
+  --admin-blue: #1d5fbf;
+  --admin-accent: #2563eb;
+  --admin-line: rgba(29, 95, 191, 0.16);
+  --admin-field: #f8fbff;
+  --admin-focus: rgba(37, 99, 235, 0.12);
+}
+
 .admin-page button,
-.admin-page input,
-.admin-page textarea,
-.admin-page select,
 .admin-page a {
+  cursor: pointer;
+}
+
+.admin-page input,
+.admin-page textarea {
+  cursor: text;
+}
+
+.admin-page select,
+.admin-page label {
   cursor: pointer;
 }
 
@@ -33,11 +69,11 @@
   min-width: 86px;
   height: 42px;
   border-radius: 8px;
-  color: #dbeafe;
+  color: var(--admin-blue);
   text-decoration: none;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  background: rgba(15, 23, 42, 0.66);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-panel);
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
 }
 
 .admin-back:hover {
@@ -45,9 +81,35 @@
   transform: translateY(-1px);
 }
 
+.admin-theme {
+  margin-left: auto;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: var(--admin-panel);
+  color: var(--admin-text);
+  font-size: 1rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.admin-theme:hover {
+  border-color: rgba(96, 165, 250, 0.7);
+  transform: translateY(-1px);
+}
+
+.admin-theme:focus-visible,
+.admin-back:focus-visible,
+.admin-submit:focus-visible,
+.admin-upload:focus-within {
+  outline: 3px solid var(--admin-focus);
+  outline-offset: 3px;
+}
+
 .admin-kicker {
   margin: 0 0 4px;
-  color: #34d399;
+  color: var(--admin-accent);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -59,7 +121,7 @@
   font-family: "Cormorant Garamond", serif;
   font-size: clamp(2.4rem, 5vw, 4.6rem);
   line-height: 0.95;
-  color: #ffffff;
+  color: var(--admin-text);
 }
 
 .admin-shell {
@@ -73,8 +135,8 @@
 
 .admin-form-card,
 .admin-preview {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid var(--admin-line);
+  background: var(--admin-panel);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
   backdrop-filter: blur(18px);
 }
@@ -90,7 +152,7 @@
 
 .admin-form-head span {
   display: block;
-  color: #bfdbfe;
+  color: var(--admin-blue);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -99,7 +161,7 @@
 
 .admin-form-head p {
   margin: 7px 0 0;
-  color: #94a3b8;
+  color: var(--admin-muted);
 }
 
 .admin-field {
@@ -109,7 +171,7 @@
 }
 
 .admin-field span {
-  color: #cbd5e1;
+  color: var(--admin-soft);
   font-size: 0.82rem;
   font-weight: 700;
 }
@@ -118,10 +180,10 @@
 .admin-field textarea,
 .admin-field select {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid var(--admin-line);
   border-radius: 8px;
-  background: rgba(2, 6, 23, 0.52);
-  color: #f8fafc;
+  background: var(--admin-field);
+  color: var(--admin-text);
   font: inherit;
   padding: 13px 14px;
   outline: none;
@@ -136,9 +198,8 @@
 .admin-field input:focus,
 .admin-field textarea:focus,
 .admin-field select:focus {
-  border-color: rgba(52, 211, 153, 0.76);
-  background: rgba(2, 6, 23, 0.7);
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.11);
+  border-color: rgba(96, 165, 250, 0.76);
+  box-shadow: 0 0 0 3px var(--admin-focus);
 }
 
 .admin-grid {
@@ -156,14 +217,14 @@
   border: 1px dashed rgba(96, 165, 250, 0.46);
   border-radius: 8px;
   background: rgba(30, 64, 175, 0.12);
-  color: #dbeafe;
+  color: var(--admin-blue);
   text-align: center;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .admin-upload:hover {
   border-color: rgba(52, 211, 153, 0.78);
-  background: rgba(52, 211, 153, 0.09);
+  background: rgba(96, 165, 250, 0.09);
 }
 
 .admin-upload input {
@@ -175,7 +236,7 @@
 }
 
 .admin-upload small {
-  color: #94a3b8;
+  color: var(--admin-muted);
 }
 
 .admin-status {
@@ -200,11 +261,11 @@
   min-height: 50px;
   border: 0;
   border-radius: 8px;
-  color: #052e1b;
+  color: #ffffff;
   font: inherit;
   font-weight: 900;
-  background: linear-gradient(135deg, #86efac, #34d399 45%, #38bdf8);
-  box-shadow: 0 16px 38px rgba(16, 185, 129, 0.22);
+  background: linear-gradient(135deg, #1d4ed8, #2563eb 45%, #38bdf8);
+  box-shadow: 0 16px 38px rgba(37, 99, 235, 0.24);
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 
@@ -264,7 +325,7 @@
 
 .admin-preview-label {
   margin: 0 0 8px;
-  color: #34d399;
+  color: var(--admin-accent);
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.13em;
@@ -273,14 +334,14 @@
 
 .admin-preview h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--admin-text);
   font-size: clamp(1.7rem, 3vw, 2.5rem);
   line-height: 1;
   font-family: "Cormorant Garamond", serif;
 }
 
 .admin-preview-body > p:not(.admin-preview-label) {
-  color: #cbd5e1;
+  color: var(--admin-soft);
   line-height: 1.6;
   margin: 12px 0 18px;
 }
@@ -294,7 +355,7 @@
 .admin-preview-meta span {
   padding: 8px 10px;
   border-radius: 8px;
-  color: #dbeafe;
+  color: var(--admin-blue);
   background: rgba(59, 130, 246, 0.12);
   border: 1px solid rgba(96, 165, 250, 0.2);
   font-size: 0.84rem;
