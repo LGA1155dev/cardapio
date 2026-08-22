@@ -1,0 +1,31 @@
+// Banco fake — substituir por DB real futuramente
+const users = [
+  { id: 1, email: "admin@test.com", password: "123", role: "admin", name: "Admin" },
+];
+
+// POST /auth/login
+function login(req, res) {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
+  }
+
+  const user = users.find(
+    (u) => u.email === email && u.password === password
+  );
+
+  if (!user) {
+    return res.status(401).json({ message: "Credenciais inválidas." });
+  }
+
+  // Em produção: gerar JWT aqui
+  const token = Buffer.from(`${user.id}:${Date.now()}`).toString("base64");
+
+  return res.json({
+    token,
+    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+  });
+}
+
+module.exports = { login };

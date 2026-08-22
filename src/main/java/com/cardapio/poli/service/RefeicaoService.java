@@ -1,0 +1,56 @@
+package com.cardapio.poli.service;
+import com.cardapio.poli.model.Refeicao;
+import com.cardapio.poli.model.Usuario;
+import com.cardapio.poli.repository.RefeicaoRepository;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class RefeicaoService {
+    private final RefeicaoRepository repository;
+
+    public RefeicaoService(RefeicaoRepository repository ){
+            this.repository = repository;
+    }
+
+    public List<Refeicao> listar(){
+        return repository.findAll();
+    }
+
+   public Refeicao adicionar(Refeicao refeicao){
+        return repository.save(refeicao);
+    }
+
+
+    public void remover(Long Id){
+            repository.deleteById(Id);
+    }
+
+    public Refeicao buscarPorId(Long id){
+        return repository.findById(id)
+                .orElseThrow(
+                        () -> new RuntimeException("Refeiçao não encontrada!")
+                );
+    }
+
+    public Refeicao atualizar(
+            Long id,
+            Refeicao nova
+    ){
+        Refeicao atual =
+                repository.findById(id)
+                                .orElseThrow();
+
+        atual.setName(nova.getName());
+        atual.setDescription(nova.getDescription());
+        atual.setDayWeek(nova.getDayWeek());
+        atual.setCalories(nova.getCalories());
+        atual.setImageUrl(nova.getImageUrl());
+
+        return repository.save(atual);
+    }
+
+
+
+
+}
