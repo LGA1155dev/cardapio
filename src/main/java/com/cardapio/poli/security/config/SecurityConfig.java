@@ -70,7 +70,8 @@ public class SecurityConfig {
         List<String> origins = new ArrayList<>(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
-                "http://[::1]:*"
+                "http://[::1]:*",
+                "https://*.vercel.app"
         ));
 
         if (frontendUrl != null && !frontendUrl.isBlank()) {
