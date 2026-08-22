@@ -23,7 +23,7 @@ import java.util.ArrayList;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${app.frontend-url:}")
+    @Value("${APP_FRONTEND_URL:}")
     private String frontendUrl;
 
     @Bean
