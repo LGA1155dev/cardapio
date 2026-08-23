@@ -16,7 +16,7 @@ function getInitialQuality() {
   const isWeakDevice = memory <= 4 || cores <= 4 || isSmallScreen || prefersReducedMotion;
 
   return {
-    dpr: isWeakDevice ? 1 : Math.min(window.devicePixelRatio || 1, 1.75),
+    dpr: isWeakDevice ? 1 : Math.min(window.devicePixelRatio || 1, 1.5),
     shadows: !isWeakDevice,
     reducedMotion: prefersReducedMotion,
   };
@@ -127,14 +127,14 @@ function VegetableScene({ quality, pointerRef }) {
       </group>
       {quality.shadows && (
         <ContactShadows
-          position={[0, shadowY, 0]}
-          opacity={0.34}
-          scale={3.3}
-          blur={2.4}
-          far={4}
-          resolution={256}
-        />
-      )}
+        position={[0, shadowY, 0]}
+        opacity={0.34}
+        scale={3.3}
+        blur={1.5}
+        far={4}
+        resolution={128}
+  />
+)}
     </>
   );
 }
@@ -235,9 +235,13 @@ export default function VegetableModel() {
       <Canvas
         camera={{ position: [0, 0.55, 5.4], fov: 32 }}
         dpr={[1, quality.dpr]}
-        gl={{ antialias: quality.shadows, powerPreference: "high-performance", alpha: true }}
-        shadows={quality.shadows}
-      >
+        gl={{
+          antialias: false,
+          powerPreference: "high-performance",
+          alpha: true,
+      }}
+  shadows={quality.shadows}
+>
         <PerformanceMonitor
           onDecline={() => setQuality((current) => ({ ...current, dpr: 1, shadows: false }))}
           onIncline={() => setQuality((current) => ({ ...current, dpr: Math.min(1.5, current.dpr + 0.15) }))}
@@ -247,7 +251,7 @@ export default function VegetableModel() {
           castShadow={quality.shadows}
           position={[3.5, 5, 4.5]}
           intensity={2.15}
-          shadow-mapSize={[512, 512]}
+          shadow-mapSize={[256, 256]}
           shadow-camera-near={0.5}
           shadow-camera-far={14}
         />
