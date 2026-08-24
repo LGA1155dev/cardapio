@@ -315,6 +315,7 @@ const CSS = `
 .pl-stats{background:linear-gradient(135deg,#082b61,#155fc7);padding:52px 24px;text-align:center;color:#fff}
 .pl-stats-inner{max-width:760px;margin:0 auto}.pl-stats h3{font-family:'Fraunces',serif;font-size:clamp(22px,3vw,30px);font-weight:600;margin-bottom:10px}
 .pl-stats p{font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.7;max-width:520px;margin:0 auto}
+.pl-s-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px}.pl-s-box{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);border-radius:16px;padding:18px 12px}.pl-s-box strong{display:block;font-size:26px;font-weight:800;line-height:1}.pl-s-lbl{display:block;margin-top:8px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.68)}
 
 .pl-foot{padding:40px 24px 90px;background:var(--cream)}.pl-foot-inner{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:24px}.pl-foot-brand{display:flex;align-items:center;gap:10px}.pl-foot-copy{font-size:11px;color:var(--muted)}
 .pl-fab{position:fixed;bottom:82px;right:16px;width:44px;height:44px;border-radius:50%;background:var(--forest);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(47,82,51,.35);opacity:0;pointer-events:none;transition:opacity .3s,transform .2s;z-index:199}.pl-fab.vis{opacity:1;pointer-events:auto}
@@ -382,6 +383,13 @@ function Reveal({ as: Tag = "div", className = "", delay = 0, children, ...rest 
       {children}
     </Tag>
   );
+}
+
+function CountUp({ target, suffix = "" }) {
+  const value = Number(target || 0);
+  const formatted = Number.isInteger(value) ? value : value.toFixed(1);
+
+  return <strong>{formatted}{suffix}</strong>;
 }
 
 function StarRating({ item, canInteract, summary, onRated }) {
@@ -802,6 +810,23 @@ export default function Refeicoes() {
     })).filter((section) => section.meals.length > 0)
   ), [currentWeekMeals]);
 
+  const stats = useMemo(() => {
+    const summaries = Object.values(ratingSummaries);
+    const totalRatings = summaries.reduce((total, summary) => total + Number(summary?.quantidade || 0), 0);
+    const ratingSum = summaries.reduce((total, summary) => {
+      const quantidade = Number(summary?.quantidade || 0);
+      const media = Number(summary?.media || 0);
+      return total + (quantidade * media);
+    }, 0);
+    const averageRating = totalRatings > 0 ? ratingSum / totalRatings : 0;
+
+    return [
+      { t: currentWeekMeals.length, s: "", lbl: "refeicoes da semana" },
+      { t: availableDays.length, s: "", lbl: "dias com cardapio" },
+      { t: totalRatings > 0 ? averageRating : 0, s: "/5", lbl: totalRatings > 0 ? "media das avaliacoes" : "sem avaliacoes ainda" },
+    ];
+  }, [availableDays.length, currentWeekMeals.length, ratingSummaries]);
+
   const scrollToRef = (ref, key) => {
     setNavOn(key);
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1143,7 +1168,7 @@ export default function Refeicoes() {
           <h3 className="serif">Comer bem e aprender melhor</h3>
           <p>Uma escola que cuida da alimentacao cuida do futuro dos seus alunos. Cada refeicao e um investimento no aprendizado.</p>
           <div className="pl-s-row">
-            {STATS.map((stat) => (
+            {stats.map((stat) => (
               <div className="pl-s-box" key={stat.lbl}>
                 <CountUp target={stat.t} suffix={stat.s} />
                 <span className="pl-s-lbl">{stat.lbl}</span>

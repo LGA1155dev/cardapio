@@ -31,7 +31,7 @@ export function useAuth() {
         return true;
       }
     } catch (err) {
-      if (err.authRefreshFailed || err.response?.status === 401) {
+      if (err.authRefreshFailed || err.response?.status === 401 || err.response?.status === 403) {
         authService.clearAuthStorage();
         setUser(null);
         return false;

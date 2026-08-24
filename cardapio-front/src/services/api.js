@@ -3,9 +3,10 @@ import axios from "axios";
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
 const ROLE_KEY = "role";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8081" : "")).trim().replace(/\/+$/, "");
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -34,7 +35,7 @@ let refreshRequest = null;
 export async function refreshAccessToken() {
   if (!refreshRequest) {
     refreshRequest = axios
-      .post(`${api.defaults.baseURL}/usuarios/refresh`, null, {
+      .post(`${API_BASE_URL}/usuarios/refresh`, null, {
         withCredentials: true,
         headers: {
           "Content-Type": "application/json",
