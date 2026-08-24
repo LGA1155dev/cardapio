@@ -1,6 +1,5 @@
 package com.cardapio.poli.service;
 import com.cardapio.poli.model.Refeicao;
-import com.cardapio.poli.model.Usuario;
 import com.cardapio.poli.repository.RefeicaoRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -15,6 +14,10 @@ public class RefeicaoService {
 
     public List<Refeicao> listar(){
         return repository.findAll();
+    }
+
+    public List<Refeicao> listarPorSemana(Integer trimestre, Integer semana){
+        return repository.findByTrimestreAndSemana(trimestre, semana);
     }
 
    public Refeicao adicionar(Refeicao refeicao){
@@ -46,6 +49,9 @@ public class RefeicaoService {
         atual.setDayWeek(nova.getDayWeek());
         atual.setCalories(nova.getCalories());
         atual.setImageUrl(nova.getImageUrl());
+        atual.setTrimestre(nova.getTrimestre());
+        atual.setSemana(nova.getSemana());
+        atual.setTipo(nova.getTipo());
 
         return repository.save(atual);
     }

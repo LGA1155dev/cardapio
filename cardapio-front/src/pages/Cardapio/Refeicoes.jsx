@@ -17,6 +17,34 @@ const DAYS = [
   "Sábado",
 ];
 
+const WEEK_ANCHOR = {
+  date: "2026-08-24",
+  trimestre: 2,
+  semana: 4,
+};
+
+const MEAL_TYPES = [
+  { key: "ALMOCO", label: "Almoço", itemLabel: "prato do dia" },
+  { key: "CAFE_DA_MANHA", label: "Café da manhã", itemLabel: "café da manhã" },
+  { key: "SUCO", label: "Sucos", itemLabel: "suco" },
+  { key: "SOBREMESA", label: "Sobremesas", itemLabel: "sobremesa" },
+];
+
+const normalizeType = (tipo) => (tipo || "ALMOCO").trim().toUpperCase();
+const getTypeMeta = (tipo) => MEAL_TYPES.find((type) => type.key === normalizeType(tipo)) || MEAL_TYPES[0];
+
+const getCurrentWeekInfo = () => {
+  const anchor = new Date(`${WEEK_ANCHOR.date}T00:00:00`);
+  const now = new Date();
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const diffWeeks = Math.max(0, Math.floor((now - anchor) / msPerWeek));
+
+  return {
+    trimestre: WEEK_ANCHOR.trimestre,
+    semana: WEEK_ANCHOR.semana + diffWeeks,
+  };
+};
+
 const DAY_META = {
   "Segunda-feira": { short: "SEG", date: "20", order: 1 },
   "Terca-feira": { short: "TER", date: "21", order: 2 },
@@ -36,12 +64,6 @@ const FEATURES = [
   { ico: "04", t: "Habitos que transformam", d: "Educando o paladar dos alunos para escolhas mais saudaveis." },
 ];
 
-const STATS = [
-  { t: 98, s: "%", lbl: "aprovacao dos alunos" },
-  { t: 12, s: "", lbl: "nutricionistas dedicados" },
-  { t: 350, s: "+", lbl: "refeicoes por semana" },
-];
-
 const SCHOOL_PHONE = "(32) 3261-3100";
 const SCHOOL_HOURS = "Segunda a sexta, 6h30 as 22h";
 const SCHOOL_ADDRESS = "R. João Carlos Knop, 2-130 - São José, São João Nepomuceno - MG, 36680-000";
@@ -49,7 +71,10 @@ const SCHOOL_ADDRESS = "R. João Carlos Knop, 2-130 - São José, São João Nep
 const normalizeRefeicao = (refeicao) => ({
   ...refeicao,
   image: refeicao.image || refeicao.imageUrl || "https://via.placeholder.com/700x520",
-  tag: refeicao.tag || "PRATO",
+  tag: normalizeType(refeicao.tipo || refeicao.tag || "ALMOCO"),
+  tipo: normalizeType(refeicao.tipo || refeicao.tag || "ALMOCO"),
+  trimestre: refeicao.trimestre || WEEK_ANCHOR.trimestre,
+  semana: refeicao.semana || WEEK_ANCHOR.semana,
   price: refeicao.price || "",
   calories: refeicao.calories || 0,
 });
@@ -60,6 +85,9 @@ const toBackendRefeicao = (refeicao) => ({
   dayWeek: refeicao.dayWeek,
   calories: refeicao.calories || 0,
   imageUrl: refeicao.image || refeicao.imageUrl,
+  trimestre: refeicao.trimestre || WEEK_ANCHOR.trimestre,
+  semana: refeicao.semana || WEEK_ANCHOR.semana,
+  tipo: normalizeType(refeicao.tipo || refeicao.tag),
 });
 
 const sortByDay = (a, b) => {
@@ -217,7 +245,22 @@ const CSS = `
 .pl-stars{position:relative;display:inline-flex;gap:4px}
 .pl-star-btn{font-size:22px;line-height:1;filter:grayscale(1) opacity(.35);transition:transform .18s cubic-bezier(.34,1.6,.64,1),filter .18s}
 .pl-star-btn:hover{transform:scale(1.18)}.pl-star-btn.active{filter:none;transform:scale(1.05)}.pl-star-btn:active{transform:scale(.85)}
+.pl-star-btn:disabled{cursor:not-allowed}.pl-star-btn:disabled:hover{transform:none}
 .pl-rate-thanks{font-size:11px;font-weight:700;color:var(--forest);display:flex;align-items:center;gap:5px;animation:plUp .3s ease both}
+.pl-comments{border-top:1px dashed var(--line);margin-top:14px;padding-top:14px;display:grid;gap:10px}
+.pl-comments-head{font-size:12px;font-weight:900;color:var(--forest);letter-spacing:.8px;text-transform:uppercase}
+.pl-comment{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:var(--cream2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.pl-comment b{display:block;font-size:12px;color:var(--ink)}
+.pl-comment p{margin:3px 0 0;font-size:12px;line-height:1.55;color:var(--ink-soft)}
+.pl-like{flex-shrink:0;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--forest-deep);font-size:11px;font-weight:900;padding:6px 9px}
+.pl-like.on{background:#fee2e2;color:#b91c1c;border-color:rgba(185,28,28,.18)}
+.pl-comment-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.pl-comment-form input{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);padding:10px 12px;font:inherit;font-size:12px}
+.pl-comment-form button{border-radius:10px;background:var(--forest);color:#fff;font-size:12px;font-weight:900;padding:10px 13px}
+.pl-comment-form button:disabled{opacity:.55;cursor:not-allowed}
+.pl-comment-muted,.pl-comment-error{font-size:12px;font-weight:700;color:var(--muted)}
+.pl-comment-error{color:#9f1d1d}
+.pl-toast{position:fixed;top:84px;right:18px;z-index:650;background:var(--forest-deep);color:#fff;border-radius:14px;padding:12px 14px;font-size:12px;font-weight:800;box-shadow:0 18px 42px rgba(0,0,0,.22)}
 
 .pl-section{padding:52px 24px;max-width:1180px;margin:0 auto}
 .pl-sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
@@ -269,11 +312,9 @@ const CSS = `
 .pl-feat-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px var(--shadow)}
 .pl-f-ico{width:38px;height:38px;border-radius:12px;background:var(--cream2);color:var(--forest);font-size:12px;font-weight:800;margin-bottom:13px;display:flex;align-items:center;justify-content:center}.pl-f-t{font-size:13.5px;font-weight:700;margin-bottom:5px}.pl-f-d{font-size:11.5px;color:var(--muted);line-height:1.65}
 
-.pl-stats{background:linear-gradient(135deg,#082b61,#155fc7);padding:60px 24px;text-align:center;color:#fff}
+.pl-stats{background:linear-gradient(135deg,#082b61,#155fc7);padding:52px 24px;text-align:center;color:#fff}
 .pl-stats-inner{max-width:760px;margin:0 auto}.pl-stats h3{font-family:'Fraunces',serif;font-size:clamp(22px,3vw,30px);font-weight:600;margin-bottom:10px}
-.pl-stats p{font-size:13.5px;color:rgba(255,255,255,.65);line-height:1.7;max-width:460px;margin:0 auto 32px}
-.pl-s-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.pl-s-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:22px 10px;transition:transform .2s}.pl-s-box:hover{transform:translateY(-3px)}
-.pl-s-num{display:block;font-family:'Fraunces',serif;font-size:clamp(26px,4.5vw,38px);font-weight:600;color:var(--mustard)}.pl-s-lbl{font-size:11px;color:rgba(255,255,255,.65);margin-top:4px;display:block;line-height:1.5}
+.pl-stats p{font-size:13.5px;color:rgba(255,255,255,.72);line-height:1.7;max-width:520px;margin:0 auto}
 
 .pl-foot{padding:40px 24px 90px;background:var(--cream)}.pl-foot-inner{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:24px}.pl-foot-brand{display:flex;align-items:center;gap:10px}.pl-foot-copy{font-size:11px;color:var(--muted)}
 .pl-fab{position:fixed;bottom:82px;right:16px;width:44px;height:44px;border-radius:50%;background:var(--forest);color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(47,82,51,.35);opacity:0;pointer-events:none;transition:opacity .3s,transform .2s;z-index:199}.pl-fab.vis{opacity:1;pointer-events:auto}
@@ -343,61 +384,22 @@ function Reveal({ as: Tag = "div", className = "", delay = 0, children, ...rest 
   );
 }
 
-function CountUp({ target, suffix }) {
-  const [ref, inView] = useReveal();
-  const [val, setVal] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return undefined;
-    let current = 0;
-    const step = Math.ceil(target / 50);
-    const interval = setInterval(() => {
-      current += step;
-      if (current >= target) {
-        current = target;
-        clearInterval(interval);
-      }
-      setVal(current);
-    }, 25);
-    return () => clearInterval(interval);
-  }, [inView, target]);
-
-  return (
-    <span className="pl-s-num" ref={ref}>
-      {val}
-      {suffix}
-    </span>
-  );
-}
-
-function StarRating({ item, onRated }) {
+function StarRating({ item, canInteract, summary, onRated }) {
   const [hover, setHover] = useState(0);
-  const [userRating, setUserRating] = useState(0);
-  const [avg, setAvg] = useState(4.7);
-  const [count, setCount] = useState(120);
+  const userRating = summary?.minhaNota || 0;
+  const avg = Number(summary?.media || 0);
+  const label = summary?.textoQuantidade || `${summary?.quantidade || 0} pessoas avaliaram`;
 
-  useEffect(() => {
-    setUserRating(0);
-    setHover(0);
-    setAvg(4.4 + ((item.id || 1) % 6) / 10);
-    setCount(80 + ((item.id || 1) * 13) % 180);
-  }, [item.id]);
-
-  const rate = (val) => {
-    if (userRating) return;
-    const newCount = count + 1;
-    const newAvg = (avg * count + val) / newCount;
-    setUserRating(val);
-    setCount(newCount);
-    setAvg(newAvg);
-    onRated?.(item, val);
+  const rate = async (val) => {
+    if (!canInteract || userRating) return;
+    await onRated?.(item, val);
   };
 
   return (
     <div className="pl-rate-block">
       <div className="pl-rate-head">
         <div className="pl-rate-avg">
-          <b>★ {avg.toFixed(1)}</b> ({count} avaliacoes)
+          <b>★ {avg.toFixed(1)}</b> ({label})
         </div>
         {userRating > 0 && <div className="pl-rate-thanks">✓ Obrigado pela nota!</div>}
       </div>
@@ -407,15 +409,119 @@ function StarRating({ item, onRated }) {
             key={n}
             type="button"
             className={`pl-star-btn${n <= (hover || userRating) ? " active" : ""}`}
-            onMouseEnter={() => !userRating && setHover(n)}
+            disabled={!canInteract || !!userRating}
+            onMouseEnter={() => canInteract && !userRating && setHover(n)}
             onMouseLeave={() => setHover(0)}
             onClick={() => rate(n)}
             aria-label={`Avaliar com ${n} estrelas`}
+            title={!canInteract ? "Faça login para avaliar" : undefined}
           >
             {n <= (hover || userRating) ? "★" : "☆"}
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function CommentsBlock({ item, canInteract, onUnauthorized }) {
+  const [comments, setComments] = useState([]);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadComments = useCallback(async () => {
+    if (!item?.id) return;
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await api.get(`/refeicao/${item.id}/comentarios`);
+      setComments(response.data || []);
+    } catch {
+      setComments([]);
+      setError("Nao foi possivel carregar os comentarios.");
+    } finally {
+      setLoading(false);
+    }
+  }, [item?.id]);
+
+  useEffect(() => {
+    setText("");
+    loadComments();
+  }, [loadComments]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!canInteract) {
+      onUnauthorized?.("Faça login para comentar.");
+      return;
+    }
+    if (!text.trim()) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      const response = await api.post(`/refeicao/${item.id}/comentarios`, { texto: text.trim() });
+      setComments((current) => [...current, response.data]);
+      setText("");
+    } catch (err) {
+      setError(err.response?.data?.message || "Nao foi possivel comentar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const like = async (comment) => {
+    if (!canInteract) {
+      onUnauthorized?.("Faça login para curtir comentarios.");
+      return;
+    }
+
+    try {
+      const response = await api.post(`/refeicao/comentarios/${comment.id}/likes`);
+      setComments((current) => current.map((item) => (
+        item.id === comment.id ? response.data : item
+      )));
+    } catch (err) {
+      setError(err.response?.data?.message || "Nao foi possivel curtir.");
+    }
+  };
+
+  return (
+    <div className="pl-comments">
+      <div className="pl-comments-head">Comentários</div>
+      {loading && <div className="pl-comment-muted">Carregando comentários...</div>}
+      {!loading && comments.length === 0 && <div className="pl-comment-muted">0 comentários</div>}
+      {comments.map((comment) => (
+        <div className="pl-comment" key={comment.id}>
+          <div>
+            <b>{comment.usuarioNome}</b>
+            <p>{comment.texto}</p>
+          </div>
+          <button
+            type="button"
+            className={`pl-like${comment.curtidoPorMim ? " on" : ""}`}
+            onClick={() => like(comment)}
+            title={canInteract ? "Curtir comentario" : "Faça login para curtir"}
+          >
+            ♥ {comment.likes || 0}
+          </button>
+        </div>
+      ))}
+      <form className="pl-comment-form" onSubmit={submit}>
+        <input
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          placeholder={canInteract ? "Escreva um comentário" : "Faça login para comentar"}
+          disabled={!canInteract || saving}
+        />
+        <button type="submit" disabled={!canInteract || saving || !text.trim()}>
+          {saving ? "Enviando..." : "Enviar"}
+        </button>
+      </form>
+      {error && <div className="pl-comment-error">{error}</div>}
     </div>
   );
 }
@@ -577,12 +683,15 @@ export default function Refeicoes() {
   const [toast, setToast] = useState(null);
   const [loadingMeals, setLoadingMeals] = useState(true);
   const [fetchError, setFetchError] = useState("");
+  const [ratingSummaries, setRatingSummaries] = useState({});
 
   const introRef = useRef(null);
   const semanaRef = useRef(null);
   const sobreRef = useRef(null);
   const undoTimerRef = useRef(null);
   const isAdmin = isAdminRole(localStorage.getItem("role"));
+  const isAuthenticated = Boolean(localStorage.getItem("token"));
+  const currentWeek = useMemo(() => getCurrentWeekInfo(), []);
 
   useEffect(() => {
     localStorage.setItem("cardapio-theme", theme);
@@ -625,6 +734,35 @@ export default function Refeicoes() {
     };
   }, []);
 
+  const currentWeekMeals = useMemo(() => (
+    refeicoes.filter((refeicao) => (
+      refeicao.trimestre === currentWeek.trimestre && refeicao.semana === currentWeek.semana
+    ))
+  ), [currentWeek.semana, currentWeek.trimestre, refeicoes]);
+
+  useEffect(() => {
+    if (currentWeekMeals.length === 0) {
+      setRatingSummaries({});
+      return undefined;
+    }
+
+    let mounted = true;
+    Promise.all(
+      currentWeekMeals.map((meal) => (
+        api.get(`/refeicao/${meal.id}/avaliacoes`)
+          .then((response) => [meal.id, response.data])
+          .catch(() => [meal.id, { media: 0, quantidade: 0, textoQuantidade: "0 pessoas avaliaram" }])
+      ))
+    ).then((entries) => {
+      if (!mounted) return;
+      setRatingSummaries(Object.fromEntries(entries));
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentWeekMeals]);
+
   useEffect(() => {
     const onScroll = () => setFabVis(window.scrollY > 260);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -644,18 +782,25 @@ export default function Refeicoes() {
   }, []);
 
   const filtered = useMemo(() => {
-    if (filter === "Todos") return refeicoes;
-    return refeicoes.filter((refeicao) => refeicao.dayWeek === filter);
-  }, [filter, refeicoes]);
+    if (filter === "Todos") return currentWeekMeals;
+    return currentWeekMeals.filter((refeicao) => refeicao.dayWeek === filter);
+  }, [currentWeekMeals, filter]);
 
   const availableDays = useMemo(() => {
-    const unique = [...new Set(refeicoes.map((refeicao) => refeicao.dayWeek))];
+    const unique = [...new Set(currentWeekMeals.map((refeicao) => refeicao.dayWeek))];
     return unique.sort((a, b) => (DAY_META[a]?.order || 99) - (DAY_META[b]?.order || 99));
-  }, [refeicoes]);
+  }, [currentWeekMeals]);
 
   const activeMeal = useMemo(() => (
-    refeicoes.find((refeicao) => refeicao.id === activeId) || filtered[0] || refeicoes[0] || null
-  ), [activeId, filtered, refeicoes]);
+    currentWeekMeals.find((refeicao) => refeicao.id === activeId) || filtered[0] || currentWeekMeals[0] || null
+  ), [activeId, currentWeekMeals, filtered]);
+
+  const sections = useMemo(() => (
+    MEAL_TYPES.map((type) => ({
+      ...type,
+      meals: currentWeekMeals.filter((meal) => normalizeType(meal.tipo) === type.key),
+    })).filter((section) => section.meals.length > 0)
+  ), [currentWeekMeals]);
 
   const scrollToRef = (ref, key) => {
     setNavOn(key);
@@ -669,8 +814,19 @@ export default function Refeicoes() {
     setNavOn("hoje");
   };
 
-  const handleRated = (meal, val) => {
-    setToast(`Nota ${val} enviada para ${meal.name}!`);
+  const handleRated = async (meal, val) => {
+    if (!isAuthenticated) {
+      setToast("Faça login para avaliar comidas.");
+      return;
+    }
+
+    try {
+      const response = await api.post(`/refeicao/${meal.id}/avaliacoes`, { nota: val });
+      setRatingSummaries((current) => ({ ...current, [meal.id]: response.data }));
+      setToast(`Nota ${val} enviada para ${meal.name}!`);
+    } catch (err) {
+      setToast(err.response?.data?.message || "Nao foi possivel avaliar agora.");
+    }
   };
 
   const handleSaveMeal = async (meal) => {
@@ -759,7 +915,7 @@ export default function Refeicoes() {
         <div id="pl-splash" className={splashGone ? "gone" : ""}>
           <div className="pl-sp-mark">🍃</div>
           <div className="pl-sp-name">Polivalente</div>
-          <div className="pl-sp-sub">Cardapio da Semana</div>
+          <div className="pl-sp-sub">Semana {currentWeek.semana} - {currentWeek.trimestre}º Trimestre</div>
           <div className="pl-sp-bar"><div className="pl-sp-fill" /></div>
         </div>
       )}
@@ -772,7 +928,7 @@ export default function Refeicoes() {
             <div className="pl-mark">🍃</div>
             <div className="pl-words">
               <b>Polivalente</b>
-              <small>Cardapio da Semana</small>
+              <small>Semana {currentWeek.semana} - {currentWeek.trimestre}º Trimestre</small>
             </div>
           </div>
           <nav className="pl-tb-nav">
@@ -820,11 +976,11 @@ export default function Refeicoes() {
       <section className="pl-hero hero" ref={introRef}>
         <div className="pl-hero-inner">
           <div>
-            <span className="pl-eyebrow">🥗 Alimentacao escolar saudavel</span>
+            <span className="pl-eyebrow">Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre</span>
             <h1>O que tem para <em>comer</em> nesta semana?</h1>
             <p>
               Cardapio elaborado por nutricionistas, com ingredientes frescos e selecionados.
-              Toque em um dia para ver o prato completo e avaliar o que achou.
+              Toque em um dia para ver a refeicao completa, comentarios e avaliacoes reais.
             </p>
             <div className="pl-hero-actions">
               <button type="button" className="pl-primary" onClick={() => scrollToRef(semanaRef, "semana")}>Ver semana</button>
@@ -851,11 +1007,11 @@ export default function Refeicoes() {
               className={`pl-tab${activeMeal?.dayWeek === day ? " on" : ""}`}
               onClick={() => {
                 setFilter(day);
-                const meal = refeicoes.find((refeicao) => refeicao.dayWeek === day);
+                const meal = currentWeekMeals.find((refeicao) => refeicao.dayWeek === day);
                 if (meal) setActiveId(meal.id);
               }}
             >
-              {refeicoes.some((meal) => meal.dayWeek === day && meal.tag === "ESPECIAL") && <span className="dot" />}
+              {currentWeekMeals.some((meal) => meal.dayWeek === day && normalizeType(meal.tipo) !== "ALMOCO") && <span className="dot" />}
               <b>{DAY_META[day]?.short || day.slice(0, 3).toUpperCase()}</b>
               <span>{DAY_META[day]?.date || ""}</span>
             </button>
@@ -866,7 +1022,7 @@ export default function Refeicoes() {
         {loadingMeals && <div className="pl-status">Carregando refeicoes...</div>}
         {!loadingMeals && !activeMeal && (
           <div className="pl-empty">
-            Nenhuma refeicao cadastrada no banco de dados.
+            Nenhuma refeicao cadastrada para a Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre.
             {isAdmin && " Use o painel admin para publicar a primeira comida."}
           </div>
         )}
@@ -874,19 +1030,29 @@ export default function Refeicoes() {
         {activeMeal && (
           <div className="pl-ticket">
             <div className="pl-t-img">
-              {activeMeal.tag === "ESPECIAL" && <span className="pl-t-ribbon">⭐ Especial da semana</span>}
+              {normalizeType(activeMeal.tipo) !== "ALMOCO" && <span className="pl-t-ribbon">{getTypeMeta(activeMeal.tipo).label}</span>}
               <img src={activeMeal.image} alt={activeMeal.name} />
             </div>
             <div className="pl-t-body">
-              <div className="pl-t-day">{activeMeal.dayWeek} <span>· prato do dia</span></div>
+              <div className="pl-t-day">{activeMeal.dayWeek} <span>· {getTypeMeta(activeMeal.tipo).itemLabel}</span></div>
               <div className="pl-t-dish serif">{activeMeal.name}</div>
               <div className="pl-t-desc">{activeMeal.description}</div>
               <div className="pl-t-meta">
                 <span className="pl-chip kcal">🔥 {activeMeal.calories} kcal</span>
-                <span className="pl-chip">{activeMeal.tag}</span>
+                <span className="pl-chip">{getTypeMeta(activeMeal.tipo).label}</span>
                 {activeMeal.price && <span className="pl-chip">{activeMeal.price}</span>}
               </div>
-              <StarRating item={activeMeal} onRated={handleRated} />
+              <StarRating
+                item={activeMeal}
+                canInteract={isAuthenticated}
+                summary={ratingSummaries[activeMeal.id]}
+                onRated={handleRated}
+              />
+              <CommentsBlock
+                item={activeMeal}
+                canInteract={isAuthenticated}
+                onUnauthorized={setToast}
+              />
               <div className="pl-ticket-actions">
                 <button type="button" className="pl-mini-btn" onClick={() => setSelected(activeMeal)}>Ver detalhes</button>
                 {isAdmin && (
@@ -905,8 +1071,8 @@ export default function Refeicoes() {
         <div className="pl-sec-head">
           <div>
             <div className="pl-sec-eyebrow">Visao geral</div>
-            <div className="pl-sec-h">A semana toda, de um so olhar</div>
-            <div className="pl-sec-sub">Use os filtros sem perder a lista carregada da API</div>
+            <div className="pl-sec-h">Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre</div>
+            <div className="pl-sec-sub">Dados antigos continuam no banco; aqui aparece a semana atual.</div>
           </div>
         </div>
 
@@ -939,10 +1105,10 @@ export default function Refeicoes() {
                 </div>
               )}
               <div className="pl-wc-img">
-                <span className={`pl-wc-badge${meal.tag === "ESPECIAL" ? " esp" : ""}`}>
-                  {meal.tag === "ESPECIAL" ? "⭐ Especial" : DAY_META[meal.dayWeek]?.short || "DIA"}
+                <span className={`pl-wc-badge${normalizeType(meal.tipo) !== "ALMOCO" ? " esp" : ""}`}>
+                  {getTypeMeta(meal.tipo).label}
                 </span>
-                <span className="pl-wc-rate">★ {(4.4 + (meal.id % 6) / 10).toFixed(1)}</span>
+                <span className="pl-wc-rate">★ {Number(ratingSummaries[meal.id]?.media || 0).toFixed(1)}</span>
                 <img src={meal.image} alt={meal.name} />
               </div>
               <div className="pl-wc-body">

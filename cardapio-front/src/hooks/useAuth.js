@@ -11,9 +11,13 @@ export function useAuth() {
     const saved = localStorage.getItem("user");
 
     if (!token) {
-      authService.clearAuthStorage();
-      setUser(null);
-      return false;
+      try {
+        await authService.refreshAccessToken();
+      } catch {
+        authService.clearAuthStorage();
+        setUser(null);
+        return false;
+      }
     }
 
     try {

@@ -27,6 +27,15 @@ public class Refeicao {
     @Getter
     @Setter
     private String imageUrl;
+    @Getter
+    @Setter
+    private Integer trimestre;
+    @Getter
+    @Setter
+    private Integer semana;
+    @Getter
+    @Setter
+    private String tipo;
 
 
     public Refeicao(Long id, String name, String dayWeek, String description, Integer calories, String imageUrl) {
@@ -40,5 +49,21 @@ public class Refeicao {
 
     public Refeicao() {
 
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void aplicarPadroes() {
+        if (trimestre == null) {
+            trimestre = 2;
+        }
+        if (semana == null) {
+            semana = 4;
+        }
+        if (tipo == null || tipo.isBlank()) {
+            tipo = "ALMOCO";
+        } else {
+            tipo = tipo.trim().toUpperCase();
+        }
     }
 }

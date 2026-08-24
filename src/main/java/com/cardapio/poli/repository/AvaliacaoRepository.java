@@ -7,10 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 public interface AvaliacaoRepository extends JpaRepository<Avaliacao, Long> {
 
     List<Avaliacao> findByRefeicaoOrderByDataHoraDesc(Refeicao refeicao);
 
-    Optional<Avaliacao> findByUsuarioAndRefeicao(Usuario usuario, Refeicao refeicao);
+    Optional<Avaliacao> findByUsuarioAndRefeicaoAndDataAvaliacao(Usuario usuario, Refeicao refeicao, LocalDate dataAvaliacao);
 }

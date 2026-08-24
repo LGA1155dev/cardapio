@@ -6,6 +6,8 @@ public record ComentarioResponse(
         Long id,
         String usuarioNome,
         String texto,
+        Long likes,
+        Boolean curtidoPorMim,
         LocalDateTime dataHora
 ) {
 }

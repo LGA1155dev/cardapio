@@ -4,16 +4,15 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uk_avaliacao_usuario_refeicao_data", columnNames = {"usuario_id", "refeicao_id", "data_avaliacao"})
+        @UniqueConstraint(name = "uk_like_usuario_comentario", columnNames = {"usuario_id", "comentario_id"})
 })
 @Getter
 @Setter
-public class Avaliacao {
+public class ComentarioLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,14 +23,8 @@ public class Avaliacao {
     private Usuario usuario;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "refeicao_id", nullable = false)
-    private Refeicao refeicao;
-
-    @Column(nullable = false)
-    private Integer nota;
-
-    @Column(name = "data_avaliacao", nullable = false)
-    private LocalDate dataAvaliacao;
+    @JoinColumn(name = "comentario_id", nullable = false)
+    private ComentarioRefeicao comentario;
 
     @Column(nullable = false)
     private LocalDateTime dataHora;

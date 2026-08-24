@@ -6,6 +6,7 @@ public record AvaliacaoResumoResponse(
         Double media,
         Long quantidade,
         Integer minhaNota,
+        String textoQuantidade,
         List<AvaliacaoResponse> avaliacoes
 ) {
 }

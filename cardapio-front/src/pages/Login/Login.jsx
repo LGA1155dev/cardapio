@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as THREE from "three";
 import { useAuth } from "../../hooks/useAuth";
+import { authService } from "../../services/api";
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
@@ -416,6 +417,7 @@ export default function Login() {
 
   const handleGuest = () => {
     if (status !== "idle" || guestStatus !== "idle") return;
+    authService.clearAuthStorage();
     setGuestStatus("success");
     setToast("Acesso liberado como convidado.");
     setTimeout(() => navigate("/refeicao"), 450);
