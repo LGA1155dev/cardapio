@@ -1,14 +1,16 @@
-import Login from "./pages/Login/Login.jsx";
-import Refeicoes from "./pages/Cardapio/Refeicoes.jsx";
-import Admin from "./pages/Admin/Admin.jsx";
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+
+const Login = lazy(() => import("./pages/Login/Login.jsx"));
+const Refeicoes = lazy(() => import("./pages/Cardapio/Refeicoes.jsx"));
+const Admin = lazy(() => import("./pages/Admin/Admin.jsx"));
 import PrivateRoute from "./components/PrivateRoute.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
 
 function App() {
-
   return (
-    <Routes>
+    <Suspense fallback={<div className="route-loading" role="status">Carregando cardápio…</div>}>
+      <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/refeicao" element={
@@ -22,8 +24,9 @@ function App() {
       </AdminRoute>
         } 
         />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   )
 }
 

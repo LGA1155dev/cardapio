@@ -139,15 +139,26 @@ function VegetableScene({ quality, pointerRef }) {
   );
 }
 
-useGLTF.preload(MODEL_PATH);
-
 export default function VegetableModel() {
   const [quality, setQuality] = useState(getInitialQuality);
+  const [isVisible, setIsVisible] = useState(false);
   const shellRef = useRef(null);
   const pointerRef = useRef({ x: 0, y: 0, force: 0 });
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined;
+    const shell = shellRef.current;
+    if (!shell || typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { rootMargin: "240px" });
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible || typeof window === "undefined") return undefined;
 
     const updateTravel = () => {
       const shell = shellRef.current;
@@ -175,7 +186,7 @@ export default function VegetableModel() {
       window.removeEventListener("scroll", updateTravel);
       window.removeEventListener("resize", updateTravel);
     };
-  }, []);
+  }, [isVisible]);
 
   const moveFromPointer = (event) => {
     const shell = shellRef.current;
@@ -232,7 +243,7 @@ export default function VegetableModel() {
       <span className="vegetable-model__spark vegetable-model__spark--one" />
       <span className="vegetable-model__spark vegetable-model__spark--two" />
       <span className="vegetable-model__spark vegetable-model__spark--three" />
-      <Canvas
+      {isVisible && <Canvas
         camera={{ position: [0, 0.55, 5.4], fov: 32 }}
         dpr={[1, quality.dpr]}
         gl={{
@@ -259,7 +270,7 @@ export default function VegetableModel() {
         <Suspense fallback={null}>
           <VegetableScene quality={quality} pointerRef={pointerRef} />
         </Suspense>
-      </Canvas>
+      </Canvas>}
     </div>
   );
 }
