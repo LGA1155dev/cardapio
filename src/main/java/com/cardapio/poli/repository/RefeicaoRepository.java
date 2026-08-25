@@ -7,4 +7,6 @@ import java.util.List;
 public interface RefeicaoRepository extends JpaRepository<Refeicao, Long> {
 
     List<Refeicao> findByTrimestreAndSemana(Integer trimestre, Integer semana);
+
+    List<Refeicao> findByTrimestreAndSemanaOrderByTipoAscNameAsc(Integer trimestre, Integer semana);
 }

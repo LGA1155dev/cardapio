@@ -325,7 +325,7 @@ function useParticles(count = 14) {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, registerAndLogin, loading, error } = useAuth();
+  const { login, registerAndLogin, loading, error } = useAuth({ autoCheck: false });
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("cardapio-theme");
     if (saved === "dark" || saved === "light") return saved;
@@ -417,7 +417,7 @@ export default function Login() {
 
   const handleGuest = () => {
     if (status !== "idle" || guestStatus !== "idle") return;
-    authService.clearAuthStorage();
+    authService.enterGuest();
     setGuestStatus("success");
     setToast("Acesso liberado como convidado.");
     setTimeout(() => navigate("/refeicao"), 450);

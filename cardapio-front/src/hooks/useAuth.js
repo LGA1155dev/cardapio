@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
 import { authService } from "../services/api";
 
-export function useAuth() {
+export function useAuth({ autoCheck = true } = {}) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function checkAuth() {
+    if (authService.isGuest()) {
+      setUser(null);
+      return false;
+    }
+
     const token = localStorage.getItem("token");
     const saved = localStorage.getItem("user");
 
@@ -25,8 +30,7 @@ export function useAuth() {
       const usuario = response.data?.usuario || response.data;
 
       if (usuario) {
-        localStorage.setItem("user", JSON.stringify(usuario));
-        localStorage.setItem("role", usuario.role);
+        authService.saveAuthData(token, usuario);
         setUser(usuario);
         return true;
       }
@@ -59,8 +63,8 @@ export function useAuth() {
 
   // Restaura sessão ao recarregar
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (autoCheck) checkAuth();
+  }, [autoCheck]);
 
   async function login(email, password) {
     setLoading(true);
@@ -73,9 +77,7 @@ export function useAuth() {
         throw new Error("Resposta de login inválida");
       }
 
-      localStorage.setItem("token", accessToken);
-      localStorage.setItem("user", JSON.stringify(usuario));
-      localStorage.setItem("role", usuario.role);
+      authService.saveAuthData(accessToken, usuario);
 
       setUser(usuario);
       return true;
@@ -104,9 +106,7 @@ export function useAuth() {
         throw new Error("Resposta de login inválida");
       }
 
-      localStorage.setItem("token", accessToken);
-      localStorage.setItem("user", JSON.stringify(usuario));
-      localStorage.setItem("role", usuario.role);
+      authService.saveAuthData(accessToken, usuario);
 
       setUser(usuario);
       return true;

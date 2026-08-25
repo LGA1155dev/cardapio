@@ -9,9 +9,12 @@ import com.cardapio.poli.dto.AvaliacaoResponse;
 import com.cardapio.poli.dto.AvaliacaoResumoResponse;
 import com.cardapio.poli.dto.ComentarioRequest;
 import com.cardapio.poli.dto.ComentarioResponse;
+import com.cardapio.poli.dto.GerarImagemRequest;
+import com.cardapio.poli.dto.GerarImagemResponse;
 import com.cardapio.poli.repository.AvaliacaoRepository;
 import com.cardapio.poli.repository.ComentarioLikeRepository;
 import com.cardapio.poli.repository.ComentarioRefeicaoRepository;
+import com.cardapio.poli.service.ImagemRefeicaoService;
 import com.cardapio.poli.service.RefeicaoService;
 import com.cardapio.poli.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -34,23 +37,36 @@ public class RefeicaoController {
     private final ComentarioRefeicaoRepository comentarioRepository;
     private final ComentarioLikeRepository comentarioLikeRepository;
     private final AvaliacaoRepository avaliacaoRepository;
+    private final ImagemRefeicaoService imagemRefeicaoService;
 
     public RefeicaoController(
             RefeicaoService service,
             UsuarioService usuarioService,
             ComentarioRefeicaoRepository comentarioRepository,
             ComentarioLikeRepository comentarioLikeRepository,
-            AvaliacaoRepository avaliacaoRepository
+            AvaliacaoRepository avaliacaoRepository,
+            ImagemRefeicaoService imagemRefeicaoService
     ){
         this.service = service;
         this.usuarioService = usuarioService;
         this.comentarioRepository = comentarioRepository;
         this.comentarioLikeRepository = comentarioLikeRepository;
         this.avaliacaoRepository = avaliacaoRepository;
+        this.imagemRefeicaoService = imagemRefeicaoService;
     }
 
     @GetMapping
-    public List<Refeicao> listar() {
+    public List<Refeicao> listar(
+            @RequestParam(required = false) Integer trimestre,
+            @RequestParam(required = false) Integer semana
+    ) {
+        if (trimestre != null || semana != null) {
+            if (trimestre == null || semana == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe trimestre e semana");
+            }
+            return service.listarPorSemana(trimestre, semana);
+        }
+
         return service.listar();
     }
 
@@ -66,9 +82,13 @@ public class RefeicaoController {
     public Refeicao criar(
             @RequestBody Refeicao refeicao
     ){
-        service.adicionar(refeicao);
+        return service.adicionar(refeicao);
+    }
 
-        return refeicao;
+    @PostMapping("/gerar-imagem")
+    public GerarImagemResponse gerarImagem(@Valid @RequestBody GerarImagemRequest request) {
+        String imageUrl = imagemRefeicaoService.gerarImagem(request.nome());
+        return new GerarImagemResponse(imageUrl, "Imagem gerada com sucesso");
     }
 
     @DeleteMapping("/{id}")

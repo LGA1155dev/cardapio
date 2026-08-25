@@ -279,6 +279,31 @@
   transform: none;
 }
 
+.admin-generate {
+  width: 100%;
+  min-height: 46px;
+  margin: 0 0 14px;
+  border: 1px solid rgba(96, 165, 250, 0.42);
+  border-radius: 8px;
+  color: var(--admin-blue);
+  background: rgba(59, 130, 246, 0.12);
+  font: inherit;
+  font-weight: 900;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.admin-generate:hover {
+  border-color: rgba(52, 211, 153, 0.78);
+  background: rgba(96, 165, 250, 0.16);
+  transform: translateY(-1px);
+}
+
+.admin-generate:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  transform: none;
+}
+
 .admin-preview {
   position: sticky;
   top: 24px;

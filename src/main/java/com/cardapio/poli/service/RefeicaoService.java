@@ -1,7 +1,13 @@
 package com.cardapio.poli.service;
 import com.cardapio.poli.model.Refeicao;
+import com.cardapio.poli.model.TipoRefeicao;
 import com.cardapio.poli.repository.RefeicaoRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 @Service
@@ -17,10 +23,12 @@ public class RefeicaoService {
     }
 
     public List<Refeicao> listarPorSemana(Integer trimestre, Integer semana){
-        return repository.findByTrimestreAndSemana(trimestre, semana);
+        validarTrimestreSemana(trimestre, semana);
+        return repository.findByTrimestreAndSemanaOrderByTipoAscNameAsc(trimestre, semana);
     }
 
    public Refeicao adicionar(Refeicao refeicao){
+        validar(refeicao);
         return repository.save(refeicao);
     }
 
@@ -53,9 +61,65 @@ public class RefeicaoService {
         atual.setSemana(nova.getSemana());
         atual.setTipo(nova.getTipo());
 
+        validar(atual);
         return repository.save(atual);
     }
 
+    private void validar(Refeicao refeicao) {
+        if (refeicao.getName() == null || refeicao.getName().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome da refeição é obrigatório");
+        }
+        if (refeicao.getName().trim().length() > 160) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome da refeição deve ter no máximo 160 caracteres");
+        }
+
+        refeicao.setName(refeicao.getName().trim());
+        if (refeicao.getDescription() != null) {
+            refeicao.setDescription(refeicao.getDescription().trim());
+        }
+
+        validarTrimestreSemana(refeicao.getTrimestre(), refeicao.getSemana());
+
+        try {
+            refeicao.setTipo(TipoRefeicao.from(refeicao.getTipo()).name());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+
+        if (refeicao.getCalories() == null || refeicao.getCalories() < 0) {
+            refeicao.setCalories(0);
+        }
+
+        if (refeicao.getImageUrl() != null && !refeicao.getImageUrl().isBlank()) {
+            refeicao.setImageUrl(refeicao.getImageUrl().trim());
+            validarUrlImagem(refeicao.getImageUrl());
+        }
+    }
+
+    private void validarTrimestreSemana(Integer trimestre, Integer semana) {
+        if (trimestre == null || trimestre < 1 || trimestre > 4) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trimestre inválido");
+        }
+        if (semana == null || semana < 1 || semana > 60) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Semana inválida");
+        }
+    }
+
+    private void validarUrlImagem(String imageUrl) {
+        if (imageUrl.startsWith("/")) {
+            return;
+        }
+
+        try {
+            URI uri = new URI(imageUrl);
+            String scheme = uri.getScheme();
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL da imagem deve usar http ou https");
+            }
+        } catch (URISyntaxException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL da imagem inválida");
+        }
+    }
 
 
 

@@ -24,13 +24,26 @@ const WEEK_ANCHOR = {
 };
 
 const MEAL_TYPES = [
-  { key: "ALMOCO", label: "Almoço", itemLabel: "prato do dia" },
-  { key: "CAFE_DA_MANHA", label: "Café da manhã", itemLabel: "café da manhã" },
-  { key: "SUCO", label: "Sucos", itemLabel: "suco" },
-  { key: "SOBREMESA", label: "Sobremesas", itemLabel: "sobremesa" },
+  { key: "CAFE_DA_MANHA", label: "Café da manhã", itemLabel: "café da manhã", icon: "☕" },
+  { key: "ALMOCO", label: "Almoço", itemLabel: "almoço", icon: "🍛" },
+  { key: "SUCO", label: "Sucos", itemLabel: "suco", icon: "🥤" },
+  { key: "SOBREMESA", label: "Sobremesas", itemLabel: "sobremesa", icon: "🍰" },
 ];
 
-const normalizeType = (tipo) => (tipo || "ALMOCO").trim().toUpperCase();
+const normalizeType = (tipo) => {
+  const normalized = (tipo || "ALMOCO")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s-]+/g, "_");
+
+  if (normalized === "CAFE" || normalized === "CAFE_DA_MANHA" || normalized === "CAFES_DA_MANHA") return "CAFE_DA_MANHA";
+  if (normalized === "ALMOCO" || normalized === "ALMOCOS") return "ALMOCO";
+  if (normalized === "SUCO" || normalized === "SUCOS") return "SUCO";
+  if (normalized === "SOBREMESA" || normalized === "SOBREMESAS") return "SOBREMESA";
+  return "ALMOCO";
+};
 const getTypeMeta = (tipo) => MEAL_TYPES.find((type) => type.key === normalizeType(tipo)) || MEAL_TYPES[0];
 
 const getCurrentWeekInfo = () => {
@@ -75,6 +88,7 @@ const normalizeRefeicao = (refeicao) => ({
   tipo: normalizeType(refeicao.tipo || refeicao.tag || "ALMOCO"),
   trimestre: refeicao.trimestre || WEEK_ANCHOR.trimestre,
   semana: refeicao.semana || WEEK_ANCHOR.semana,
+  dayWeek: refeicao.dayWeek || "",
   price: refeicao.price || "",
   calories: refeicao.calories || 0,
 });
@@ -82,7 +96,7 @@ const normalizeRefeicao = (refeicao) => ({
 const toBackendRefeicao = (refeicao) => ({
   name: refeicao.name,
   description: refeicao.description,
-  dayWeek: refeicao.dayWeek,
+  dayWeek: refeicao.dayWeek || "",
   calories: refeicao.calories || 0,
   imageUrl: refeicao.image || refeicao.imageUrl,
   trimestre: refeicao.trimestre || WEEK_ANCHOR.trimestre,
@@ -91,9 +105,15 @@ const toBackendRefeicao = (refeicao) => ({
 });
 
 const sortByDay = (a, b) => {
-  const orderA = DAY_META[a.dayWeek]?.order || 99;
-  const orderB = DAY_META[b.dayWeek]?.order || 99;
-  return orderA - orderB || a.id - b.id;
+  const dayOrderA = DAY_META[a.dayWeek]?.order || 99;
+  const dayOrderB = DAY_META[b.dayWeek]?.order || 99;
+  if (dayOrderA !== dayOrderB) return dayOrderA - dayOrderB;
+
+  const orderA = MEAL_TYPES.findIndex((type) => type.key === normalizeType(a.tipo));
+  const orderB = MEAL_TYPES.findIndex((type) => type.key === normalizeType(b.tipo));
+  const typeOrderA = orderA === -1 ? 99 : orderA;
+  const typeOrderB = orderB === -1 ? 99 : orderB;
+  return typeOrderA - typeOrderB || a.name.localeCompare(b.name);
 };
 
 const isAdminRole = (role) => {
@@ -550,7 +570,7 @@ function MealDetailsModal({ item, onClose }) {
           <div className="pl-modal-fade" />
           <button type="button" className="pl-close" onClick={onClose}>X</button>
           <div className="pl-modal-title">
-            <span>{item.dayWeek}</span>
+            <span>Semana {item.semana} · {item.trimestre}º trimestre · {getTypeMeta(item.tipo).label}</span>
             <h2>{item.name}</h2>
           </div>
         </div>
@@ -575,7 +595,9 @@ function MealDetailsModal({ item, onClose }) {
 function EditMealModal({ item, onClose, onSave }) {
   const [form, setForm] = useState({
     name: item.name || "",
-    dayWeek: item.dayWeek || "Segunda-feira",
+    trimestre: item.trimestre || WEEK_ANCHOR.trimestre,
+    semana: item.semana || WEEK_ANCHOR.semana,
+    tipo: normalizeType(item.tipo),
     description: item.description || "",
     calories: item.calories || 0,
     image: item.image || item.imageUrl || "",
@@ -603,6 +625,9 @@ function EditMealModal({ item, onClose, onSave }) {
       await onSave({
         ...item,
         ...form,
+        trimestre: Number(form.trimestre),
+        semana: Number(form.semana),
+        tipo: normalizeType(form.tipo),
         calories: Number(form.calories) || 0,
       });
       onClose();
@@ -636,10 +661,33 @@ function EditMealModal({ item, onClose, onSave }) {
 
         <div className="pl-edit-grid">
           <label className="pl-field">
-            <span>Dia</span>
-            <select value={form.dayWeek} onChange={(e) => update("dayWeek", e.target.value)}>
-              {DAYS.filter((day, index, arr) => day !== "Todos" && arr.indexOf(day) === index).map((day) => (
-                <option key={day} value={day}>{day}</option>
+            <span>Trimestre</span>
+            <select value={form.trimestre} onChange={(e) => update("trimestre", Number(e.target.value))}>
+              {[1, 2, 3, 4].map((trimestre) => (
+                <option key={trimestre} value={trimestre}>{trimestre}º trimestre</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="pl-field">
+            <span>Semana</span>
+            <input
+              type="number"
+              min="1"
+              max="60"
+              value={form.semana}
+              onChange={(e) => update("semana", e.target.value)}
+              required
+            />
+          </label>
+        </div>
+
+        <div className="pl-edit-grid">
+          <label className="pl-field">
+            <span>Tipo</span>
+            <select value={form.tipo} onChange={(e) => update("tipo", e.target.value)}>
+              {MEAL_TYPES.map((type) => (
+                <option key={type.key} value={type.key}>{type.label}</option>
               ))}
             </select>
           </label>
@@ -658,7 +706,7 @@ function EditMealModal({ item, onClose, onSave }) {
 
         <label className="pl-field">
           <span>Imagem URL</span>
-          <input value={form.image} onChange={(e) => update("image", e.target.value)} required />
+          <input value={form.image} onChange={(e) => update("image", e.target.value)} />
         </label>
 
         {form.image && <img className="pl-edit-preview" src={form.image} alt="Previa da refeicao" />}
@@ -683,7 +731,6 @@ export default function Refeicoes() {
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
   const [undoDelete, setUndoDelete] = useState(null);
-  const [filter, setFilter] = useState("Todos");
   const [activeId, setActiveId] = useState(null);
   const [navOn, setNavOn] = useState("hoje");
   const [fabVis, setFabVis] = useState(false);
@@ -692,13 +739,14 @@ export default function Refeicoes() {
   const [loadingMeals, setLoadingMeals] = useState(true);
   const [fetchError, setFetchError] = useState("");
   const [ratingSummaries, setRatingSummaries] = useState({});
+  const [filter, setFilter] = useState("Todos");
 
   const introRef = useRef(null);
   const semanaRef = useRef(null);
   const sobreRef = useRef(null);
   const undoTimerRef = useRef(null);
   const isAdmin = isAdminRole(localStorage.getItem("role"));
-  const isAuthenticated = Boolean(localStorage.getItem("token"));
+  const isAuthenticated = Boolean(localStorage.getItem("token")) && localStorage.getItem("authMode") !== "guest";
   const currentWeek = useMemo(() => getCurrentWeekInfo(), []);
 
   useEffect(() => {

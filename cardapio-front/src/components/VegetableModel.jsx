@@ -6,6 +6,17 @@ import { Box3, MathUtils, Vector3 } from "three";
 
 const MODEL_PATH = "/models/vegetables.glb";
 
+function canUseWebGL() {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const canvas = document.createElement("canvas");
+    return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
 function getInitialQuality() {
   if (typeof window === "undefined") return { dpr: 1.5, shadows: true, reducedMotion: false };
 
@@ -84,6 +95,7 @@ function VegetableScene({ quality, pointerRef }) {
     return () => {
       window.removeEventListener("scroll", updateFromScroll);
       window.removeEventListener("resize", updateFromScroll);
+      gsap.killTweensOf(target);
     };
   }, []);
 
@@ -143,6 +155,7 @@ useGLTF.preload(MODEL_PATH);
 
 export default function VegetableModel() {
   const [quality, setQuality] = useState(getInitialQuality);
+  const [webGLAvailable] = useState(canUseWebGL);
   const shellRef = useRef(null);
   const pointerRef = useRef({ x: 0, y: 0, force: 0 });
 
@@ -174,6 +187,14 @@ export default function VegetableModel() {
     return () => {
       window.removeEventListener("scroll", updateTravel);
       window.removeEventListener("resize", updateTravel);
+      if (shellRef.current) gsap.killTweensOf(shellRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const pointer = pointerRef.current;
+    return () => {
+      gsap.killTweensOf(pointer);
     };
   }, []);
 
@@ -215,6 +236,15 @@ export default function VegetableModel() {
       { force: 0.55, duration: 0.55, ease: "elastic.out(1, 0.45)", overwrite: "auto" },
     );
   };
+
+  if (!webGLAvailable) {
+    return (
+      <div className="vegetable-model vegetable-model--lite" ref={shellRef} aria-hidden="true">
+        <span className="vegetable-model__ring vegetable-model__ring--one" />
+        <span className="vegetable-model__ring vegetable-model__ring--two" />
+      </div>
+    );
+  }
 
   return (
     <div

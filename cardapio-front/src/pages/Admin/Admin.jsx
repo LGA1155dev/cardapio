@@ -3,14 +3,13 @@ import { Link } from "react-router-dom";
 import { api } from "../../services/api";
 import "./Admin.css";
 
-const DAYS = [
-  "Segunda-feira",
-  "Terça-feira",
-  "Quarta-feira",
-  "Quinta-feira",
-  "Sexta-feira",
-  "Sábado",
-  "Domingo",
+const TRIMESTERS = [1, 2, 3, 4];
+
+const MEAL_TYPES = [
+  { key: "CAFE_DA_MANHA", label: "Café da manhã" },
+  { key: "ALMOCO", label: "Almoço" },
+  { key: "SUCO", label: "Suco" },
+  { key: "SOBREMESA", label: "Sobremesa" },
 ];
 
 const DEFAULT_IMAGE =
@@ -24,18 +23,28 @@ export default function Admin() {
   });
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [dayWeek, setDayWeek] = useState("Segunda-feira");
+  const [trimestre, setTrimestre] = useState(2);
+  const [semana, setSemana] = useState(4);
+  const [tipo, setTipo] = useState("ALMOCO");
   const [calories, setCalories] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [previewObjectUrl, setPreviewObjectUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState({ type: "", message: "" });
   const [saving, setSaving] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
 
-  const previewImage = imageUrl || DEFAULT_IMAGE;
+  const previewImage = previewObjectUrl || imageUrl || DEFAULT_IMAGE;
+  const selectedType = MEAL_TYPES.find((mealType) => mealType.key === tipo) || MEAL_TYPES[1];
 
   useEffect(() => {
     localStorage.setItem("cardapio-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!previewObjectUrl) return undefined;
+    return () => URL.revokeObjectURL(previewObjectUrl);
+  }, [previewObjectUrl]);
 
   const preview = useMemo(
     () => ({
@@ -43,11 +52,13 @@ export default function Admin() {
       description:
         description ||
         "Descrição curta do prato, ingredientes principais e observações para o cardápio.",
-      dayWeek,
+      trimestre,
+      semana,
+      tipoLabel: selectedType.label,
       calories: calories || "0",
       image: previewImage,
     }),
-    [calories, dayWeek, description, name, previewImage]
+    [calories, description, name, previewImage, selectedType.label, semana, trimestre]
   );
 
   function handleFileChange(event) {
@@ -56,17 +67,49 @@ export default function Admin() {
     if (!file) return;
 
     setFileName(file.name);
-    setImageUrl(URL.createObjectURL(file));
+    setPreviewObjectUrl(URL.createObjectURL(file));
+    setImageUrl("");
+  }
+
+  async function handleGenerateImage() {
+    if (!name.trim() || generatingImage) return;
+
+    setGeneratingImage(true);
+    setStatus({ type: "", message: "" });
+
+    try {
+      const response = await api.post("/refeicao/gerar-imagem", { nome: name.trim() });
+      const generatedUrl = response.data?.imageUrl;
+
+      if (!generatedUrl) {
+        throw new Error("Resposta de geração inválida");
+      }
+
+      setImageUrl(generatedUrl);
+      setPreviewObjectUrl("");
+      setFileName("");
+      setStatus({ type: "success", message: "Imagem gerada. Confira a prévia antes de publicar." });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message:
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Não foi possível gerar a imagem automaticamente. Você pode tentar novamente ou publicar sem imagem.",
+      });
+    } finally {
+      setGeneratingImage(false);
+    }
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
     setStatus({ type: "", message: "" });
 
-    if (!name.trim() || !description.trim() || !dayWeek) {
+    if (!name.trim() || !trimestre || !semana || !tipo) {
       setStatus({
         type: "error",
-        message: "Preencha nome, descrição e dia da semana.",
+        message: "Preencha nome, trimestre, semana e tipo de refeição.",
       });
       return;
     }
@@ -77,18 +120,24 @@ export default function Admin() {
       await api.post("/refeicao", {
         name: name.trim(),
         description: description.trim(),
-        dayWeek,
+        dayWeek: "",
         calories: Number(calories) || 0,
-        imageUrl: previewImage,
+        imageUrl: imageUrl.trim(),
+        trimestre: Number(trimestre),
+        semana: Number(semana),
+        tipo,
       });
 
 
       setStatus({ type: "success", message: "Comida publicada no cardápio." });
       setName("");
       setDescription("");
-      setDayWeek("Segunda-feira");
+      setTrimestre(2);
+      setSemana(4);
+      setTipo("ALMOCO");
       setCalories("");
       setImageUrl("");
+      setPreviewObjectUrl("");
       setFileName("");
       }
       catch (error) {
@@ -129,7 +178,7 @@ export default function Admin() {
         <form className="admin-form-card" onSubmit={handleSubmit}>
           <div className="admin-form-head">
             <span>Nova refeição</span>
-            <p>Cadastre o prato que aparecerá no cardápio semanal.</p>
+            <p>Cadastre o item por trimestre, semana e tipo de refeição.</p>
           </div>
 
           <label className="admin-field">
@@ -153,14 +202,39 @@ export default function Admin() {
 
           <div className="admin-grid">
             <label className="admin-field">
-              <span>Dia da semana</span>
+              <span>Trimestre</span>
               <select
-                value={dayWeek}
-                onChange={(event) => setDayWeek(event.target.value)}
+                value={trimestre}
+                onChange={(event) => setTrimestre(Number(event.target.value))}
               >
-                {DAYS.map((day) => (
-                  <option key={day} value={day}>
-                    {day}
+                {TRIMESTERS.map((item) => (
+                  <option key={item} value={item}>
+                    {item}º trimestre
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="admin-field">
+              <span>Semana</span>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={semana}
+                onChange={(event) => setSemana(event.target.value)}
+                placeholder="4"
+              />
+            </label>
+          </div>
+
+          <div className="admin-grid">
+            <label className="admin-field">
+              <span>Tipo de refeição</span>
+              <select value={tipo} onChange={(event) => setTipo(event.target.value)}>
+                {MEAL_TYPES.map((mealType) => (
+                  <option key={mealType.key} value={mealType.key}>
+                    {mealType.label}
                   </option>
                 ))}
               </select>
@@ -181,14 +255,24 @@ export default function Admin() {
           <label className="admin-field">
             <span>Imagem por URL ou caminho</span>
             <input
-              value={imageUrl.startsWith("blob:") ? "" : imageUrl}
+              value={imageUrl}
               onChange={(event) => {
                 setImageUrl(event.target.value);
+                setPreviewObjectUrl("");
                 setFileName("");
               }}
               placeholder="https://... ou caminho da imagem"
             />
           </label>
+
+          <button
+            className="admin-generate"
+            type="button"
+            disabled={generatingImage || !name.trim()}
+            onClick={handleGenerateImage}
+          >
+            {generatingImage ? "Gerando imagem..." : imageUrl ? "Gerar novamente" : "Gerar imagem"}
+          </button>
 
           <label className="admin-upload">
             <input type="file" accept="image/*" onChange={handleFileChange} />
@@ -210,7 +294,7 @@ export default function Admin() {
         <aside className="admin-preview">
           <div className="admin-preview-image">
             <img src={preview.image} alt={preview.name} />
-            <span>{preview.dayWeek}</span>
+            <span>Semana {preview.semana} · {preview.trimestre}º trimestre</span>
           </div>
           <div className="admin-preview-body">
             <p className="admin-preview-label">Prévia no cardápio</p>
@@ -218,7 +302,7 @@ export default function Admin() {
             <p>{preview.description}</p>
             <div className="admin-preview-meta">
               <span>{preview.calories} kcal</span>
-              <span>Prato da semana</span>
+              <span>{preview.tipoLabel}</span>
             </div>
           </div>
         </aside>

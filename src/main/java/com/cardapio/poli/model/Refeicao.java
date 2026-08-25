@@ -61,9 +61,9 @@ public class Refeicao {
             semana = 4;
         }
         if (tipo == null || tipo.isBlank()) {
-            tipo = "ALMOCO";
+            tipo = TipoRefeicao.ALMOCO.name();
         } else {
-            tipo = tipo.trim().toUpperCase();
+            tipo = TipoRefeicao.from(tipo).name();
         }
     }
 }

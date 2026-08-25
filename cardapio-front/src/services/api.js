@@ -3,6 +3,7 @@ import axios from "axios";
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
 const ROLE_KEY = "role";
+const AUTH_MODE_KEY = "authMode";
 const API_BASE_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8081" : "")).trim().replace(/\/+$/, "");
 
 export const api = axios.create({
@@ -17,9 +18,12 @@ function clearAuthStorage() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(ROLE_KEY);
+  localStorage.removeItem(AUTH_MODE_KEY);
 }
 
 function saveAuthData(accessToken, usuario) {
+  localStorage.removeItem(AUTH_MODE_KEY);
+
   if (accessToken) {
     localStorage.setItem(TOKEN_KEY, accessToken);
   }
@@ -112,6 +116,8 @@ api.interceptors.response.use(
 );
 
 export const authService = {
+  saveAuthData,
+
   login(email, senha) {
     return api.post("/usuarios/login", {
       email,
@@ -125,6 +131,15 @@ export const authService = {
 
   me() {
     return api.get("/usuarios/me");
+  },
+
+  enterGuest() {
+    clearAuthStorage();
+    localStorage.setItem(AUTH_MODE_KEY, "guest");
+  },
+
+  isGuest() {
+    return localStorage.getItem(AUTH_MODE_KEY) === "guest";
   },
 
   async logout() {
