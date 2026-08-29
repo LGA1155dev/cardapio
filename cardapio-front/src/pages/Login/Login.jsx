@@ -196,27 +196,36 @@ function ThreeBackdrop({ theme }) {
   const stateRef = useRef({});
 
   useEffect(() => {
+    
     const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+    if (isMobile) return undefined;
+
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
+
+    renderer.setPixelRatio(
+      isMobile ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 1.5)
+    ); 
+   renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
     camera.position.set(0, 0, 4.8);
 
     const outerMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.32 });
-    const outer = new THREE.Mesh(new THREE.TorusKnotGeometry(1.25, 0.36, 170, 24, 2, 3), outerMat);
+    const outer = new THREE.Mesh(new THREE.TorusKnotGeometry(1.25, 0.36, 80, 12, 2, 3), outerMat);
     scene.add(outer);
 
     const innerMat = new THREE.MeshBasicMaterial({ color: 0x1d4ed8, wireframe: true, transparent: true, opacity: 0.14 });
-    const inner = new THREE.Mesh(new THREE.TorusKnotGeometry(1.15, 0.2, 120, 16, 2, 3), innerMat);
+    const inner = new THREE.Mesh(new THREE.TorusKnotGeometry(1.15, 0.2, 50, 8, 2, 3), innerMat);
     scene.add(inner);
 
-    const count = 500;
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const count = isMobile ? 100 : 250;
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 16;
@@ -258,16 +267,31 @@ function ThreeBackdrop({ theme }) {
 
     let raf;
     let t = 0;
-    function animate() {
+    let lastFrame = 0;
+
+    const fps = isMobile ? 30 : 60;
+    const frameInterval = 1000 / fps;
+
+    function animate(timestamp) {
       raf = requestAnimationFrame(animate);
+
+      if (timestamp - lastFrame < frameInterval) return;
+
+      lastFrame = timestamp;
+
       t += 0.0045;
+
       outer.rotation.x = t * 0.35 + py * 0.35;
       outer.rotation.y = t * 0.5 + px * 0.45;
+
       inner.rotation.x = -t * 0.28 - py * 0.2;
       inner.rotation.y = t * 0.4 + px * 0.25;
+
       particles.rotation.y = t * 0.05 + px * 0.08;
       particles.rotation.x = Math.sin(t * 0.3) * 0.1;
+
       outerMat.opacity = 0.26 + Math.sin(t * 1.1) * 0.06;
+
       renderer.render(scene, camera);
     }
 
