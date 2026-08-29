@@ -152,7 +152,7 @@ function VegetableScene({ quality, pointerRef }) {
         scale={3.3}
         blur={1.5}
         far={4}
-        resolution={128}
+        resolution={64}
   /> 
 )} 
     </>
