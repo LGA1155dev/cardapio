@@ -340,10 +340,6 @@ function ThreeBackdrop({ theme }) {
     let raf;
 let t = 0;
 let lastFrame = 0;
-let running = true;
-
-const isMobile = window.innerWidth <= 768;
-const frameInterval = isMobile ? 1000 / 30 : 1000 / 60;
 
 function animate(time) {
   const handleVisibility = () => {
