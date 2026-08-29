@@ -18,13 +18,13 @@ function canUseWebGL() {
 }
 
 function getInitialQuality() {
-  if (typeof window === "undefined") return { dpr: 1.5, shadows: true, reducedMotion: false };
+  if (typeof window === "undefined") return { dpr: 1.5, shadows: false, reducedMotion: false };
 
   const memory = navigator.deviceMemory || 4;
   const cores = navigator.hardwareConcurrency || 4;
   const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const isWeakDevice = memory <= 4 || cores <= 4 || isSmallScreen || prefersReducedMotion;
+  const isWeakDevice = true;
 
   return {
     dpr: isWeakDevice ? 1 : Math.min(window.devicePixelRatio || 1, 1.5),
@@ -137,16 +137,18 @@ function VegetableScene({ quality, pointerRef }) {
       <group ref={groupRef} scale={scale} position={[0, 0, 0]} rotation={[0.28, -0.45, -0.12]}>
         <primitive object={model} />
       </group>
-      {quality.shadows && (
-        <ContactShadows
+      
+    {quality.shadows (
+      /*
+         <ContactShadows
         position={[0, shadowY, 0]}
         opacity={0.34}
         scale={3.3}
         blur={1.5}
         far={4}
         resolution={128}
-  />
-)}
+  /> */
+)} 
     </>
   );
 }
@@ -264,7 +266,7 @@ export default function VegetableModel() {
       <span className="vegetable-model__spark vegetable-model__spark--three" />
       <Canvas
         camera={{ position: [0, 0.55, 5.4], fov: 32 }}
-        dpr={[1, quality.dpr]}
+        dpr={1}
         gl={{
           antialias: false,
           powerPreference: "high-performance",
