@@ -330,7 +330,6 @@ function ThreeBackdrop({ theme }) {
       if (event.touches && event.touches[0]) onPointerMove(event.touches[0].clientX, event.touches[0].clientY);
     };
 
-    const isMobile = window.innerWidth <= 768;
 
     if (!isMobile) {  
     window.addEventListener("mousemove", onMouseMove);
