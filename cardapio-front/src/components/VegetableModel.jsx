@@ -139,7 +139,7 @@ function VegetableScene({ quality, pointerRef }) {
       </group>
       
     {quality.shadows (
-      /*
+      
          <ContactShadows
         position={[0, shadowY, 0]}
         opacity={0.34}
@@ -147,7 +147,7 @@ function VegetableScene({ quality, pointerRef }) {
         blur={1.5}
         far={4}
         resolution={128}
-  /> */
+  /> 
 )} 
     </>
   );
