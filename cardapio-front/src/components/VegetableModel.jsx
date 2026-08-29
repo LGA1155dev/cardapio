@@ -131,13 +131,11 @@ function VegetableScene({ quality, pointerRef }) {
     state.camera.position.x = MathUtils.lerp(state.camera.position.x, motion.x * -0.45 + pointer.x * -0.18, 0.04);
     state.camera.position.y = MathUtils.lerp(state.camera.position.y, 0.55 + motion.section * 0.18, 0.035);
 
-  })
-  
-    useEffect(() => {
+
 
     state.camera.lookAt(0, 0.06, 0);
     
-  }, [camera]);
+});
 
 
   return (
