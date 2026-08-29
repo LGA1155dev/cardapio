@@ -43,7 +43,13 @@ const CSS = `
 .ll-root :focus-visible{outline:2px solid var(--electric-2);outline-offset:3px}
 
 .ll-bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:radial-gradient(ellipse 120% 80% at 50% -10%,var(--bg-2) 0%,var(--bg) 60%);transition:background .5s ease}
-.ll-mesh{position:absolute;border-radius:50%;filter:blur(110px);will-change:transform;opacity:var(--mesh-op);transition:opacity .5s ease}
+.ll-mesh{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(60px);
+  will-change:transform;
+  opacity:var(--mesh-op);
+}
 .ll-m1{width:620px;height:620px;background:radial-gradient(circle,rgba(59,130,246,.55),transparent 70%);top:-220px;left:-160px;animation:llMesh1 16s ease-in-out infinite}
 .ll-m2{width:520px;height:520px;background:radial-gradient(circle,rgba(29,78,216,.45),transparent 70%);bottom:-220px;right:-140px;animation:llMesh2 19s ease-in-out infinite}
 .ll-m3{width:420px;height:420px;background:radial-gradient(circle,rgba(96,165,250,.28),transparent 70%);top:38%;left:48%;animation:llMesh3 21s ease-in-out infinite}
@@ -61,9 +67,30 @@ const CSS = `
 
 .ll-shell{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px}
 .ll-topbar{position:fixed;top:24px;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+
+@media(max-width:768px){
+  .ll-m1{
+    width:300px;
+    height:300px;
+  }
+
+  .ll-m2{
+    width:260px;
+    height:260px;
+  }
+
+  .ll-m3{
+    width:220px;
+    height:220px;
+  }
+}
+
 @media(max-width:600px){.ll-topbar{position:static;margin-bottom:20px;padding:0}.ll-shell{padding-top:18px}}
 .ll-brand-badge{display:flex;align-items:center;gap:10px;animation:llFadeDown .6s cubic-bezier(.16,1,.3,1) both}
 @media(max-width:600px){.ll-brand-badge{justify-content:center;width:100%}}
+
+
+
 .ll-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--electric),var(--electric-2));display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-btn);flex-shrink:0}
 .ll-mark svg{width:18px;height:18px;color:#fff}
 .ll-brand-words b{display:block;color:var(--text);font-size:14px;font-weight:800;transition:color .5s}
@@ -77,7 +104,24 @@ const CSS = `
 .ll-theme-icon-enter{animation:llThemePop .35s cubic-bezier(.34,1.6,.64,1) both}
 @keyframes llThemePop{from{transform:rotate(-90deg) scale(.4);opacity:0}to{transform:rotate(0) scale(1);opacity:1}}
 
-.ll-card{width:100%;max-width:404px;background:var(--glass);backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);border:1px solid var(--line);border-radius:22px;padding:38px 34px 32px;box-shadow:var(--shadow-card);position:relative;animation:llCardIn .7s cubic-bezier(.16,1,.3,1) both,llFloat 7s ease-in-out 1s infinite;transition:background .5s ease,border-color .5s ease}
+@media(max-width:768px){
+  .ll-card{
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    background:rgba(10,15,25,.94);
+  }
+}
+
+.ll-card{
+width:100%;max-width:404px;background:var(--glass);
+backdrop-filter:blur(26px) saturate(140%);
+-webkit-backdrop-filter:blur(26px) saturate(140%);
+border:1px solid var(--line);border-radius:22px;padding:38px 34px 32px;box-shadow: var(--shadow-card);
+position:relative;
+animation:llCardIn .7s cubic-bezier(.16,1,.3,1) both,llFloat 7s ease-in-out 1s infinite;
+transition:background .5s ease,border-color .5s ease
+}
+
 .ll-card::before{content:'';position:absolute;inset:-1px;border-radius:22px;padding:1px;background:linear-gradient(140deg,rgba(96,165,250,.35),transparent 30%,transparent 70%,rgba(59,130,246,.25));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
 @keyframes llCardIn{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes llFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
@@ -150,11 +194,34 @@ const CSS = `
 @keyframes llToastOut{to{opacity:0;transform:translateX(-50%) translateY(10px)}}
 @keyframes llDrift{0%{transform:translate3d(0,0,0);opacity:0}12%{opacity:var(--op,.3)}100%{transform:translate3d(40px,-110vh,0);opacity:0}}
 
-@media(prefers-reduced-motion:reduce){
-  .ll-root *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
-  .ll-mesh,.ll-card,.ll-grid{animation:none!important}
-  .ll-spot{display:none}
+@media(max-width:768px){
+  .ll-spot{
+    display:none;
+  }
 }
+
+@media(prefers-reduced-motion:reduce){
+  .ll-root *{
+
+  animation-duration:.001ms!important;animation-iteration-count: 1!important;
+  transition-duration: .001ms!important
+
+  }
+  .ll-mesh,.ll-card,.ll-grid{animation:none!important}
+  .ll-spot{
+
+  display:none
+
+  }
+}
+
+@media(max-width:768px){
+  .ll-grid,
+  .ll-grid.two{
+    animation:none;
+  }
+}
+
 @media(max-width:480px){.ll-card{padding:30px 22px 26px;border-radius:18px}}
 `;
 
@@ -196,7 +263,7 @@ function ThreeBackdrop({ theme }) {
   const stateRef = useRef({});
 
   useEffect(() => {
-    
+
     const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
@@ -207,7 +274,7 @@ function ThreeBackdrop({ theme }) {
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 
-    renderer.setPixelRatio(
+    renderer.setPixelRatio( 
       isMobile ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 1.5)
     ); 
    renderer.setClearColor(0x000000, 0);
@@ -262,39 +329,57 @@ function ThreeBackdrop({ theme }) {
     const onTouchMove = (event) => {
       if (event.touches && event.touches[0]) onPointerMove(event.touches[0].clientX, event.touches[0].clientY);
     };
+
+    const isMobile = window.innerWidth <= 768;
+
+    if (!isMobile) {  
     window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
+
+    }
+    //window.addEventListener("touchmove", onTouchMove, { passive: true });
 
     let raf;
-    let t = 0;
-    let lastFrame = 0;
+let t = 0;
+let lastFrame = 0;
+let running = true;
 
-    const fps = isMobile ? 30 : 60;
-    const frameInterval = 1000 / fps;
+const isMobile = window.innerWidth <= 768;
+const frameInterval = isMobile ? 1000 / 30 : 1000 / 60;
 
-    function animate(timestamp) {
+function animate(time) {
+  const handleVisibility = () => {
+    running = !document.hidden;
+
+    if (running) {
+      cancelAnimationFrame(raf);
       raf = requestAnimationFrame(animate);
-
-      if (timestamp - lastFrame < frameInterval) return;
-
-      lastFrame = timestamp;
-
-      t += 0.0045;
-
-      outer.rotation.x = t * 0.35 + py * 0.35;
-      outer.rotation.y = t * 0.5 + px * 0.45;
-
-      inner.rotation.x = -t * 0.28 - py * 0.2;
-      inner.rotation.y = t * 0.4 + px * 0.25;
-
-      particles.rotation.y = t * 0.05 + px * 0.08;
-      particles.rotation.x = Math.sin(t * 0.3) * 0.1;
-
-      outerMat.opacity = 0.26 + Math.sin(t * 1.1) * 0.06;
-
-      renderer.render(scene, camera);
     }
 
+
+  };
+
+  document.addEventListener("visibilitychange", handleVisibility);
+
+
+  if (time - lastFrame < frameInterval) return;
+
+  lastFrame = time;
+
+  t += isMobile ? 0.007 : 0.0045;
+
+  outer.rotation.x = t * 0.35 + py * 0.35;
+  outer.rotation.y = t * 0.5 + px * 0.45;
+
+  inner.rotation.x = -t * 0.28 - py * 0.2;
+  inner.rotation.y = t * 0.4 + px * 0.25;
+
+  particles.rotation.y = t * 0.05 + px * 0.08;
+  particles.rotation.x = Math.sin(t * 0.3) * 0.1;
+
+  outerMat.opacity = 0.26 + Math.sin(t * 1.1) * 0.06;
+
+  renderer.render(scene, camera);
+}
     if (reduce) renderer.render(scene, camera);
     else animate();
 
