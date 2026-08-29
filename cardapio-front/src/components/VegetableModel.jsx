@@ -138,7 +138,7 @@ function VegetableScene({ quality, pointerRef }) {
         <primitive object={model} />
       </group>
       
-    {quality.shadows (
+    {quality.shadows && (
       
          <ContactShadows
         position={[0, shadowY, 0]}
@@ -156,7 +156,7 @@ function VegetableScene({ quality, pointerRef }) {
 useGLTF.preload(MODEL_PATH);
 
 export default function VegetableModel() {
-  const [quality, setQuality] = useState(getInitialQuality);
+const [quality, setQuality] = useState(getInitialQuality);
   const [webGLAvailable] = useState(canUseWebGL);
   const shellRef = useRef(null);
   const pointerRef = useRef({ x: 0, y: 0, force: 0 });
