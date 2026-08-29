@@ -18,13 +18,13 @@ function canUseWebGL() {
 }
 
 function getInitialQuality() {
-  if (typeof window === "undefined") return { dpr: 1.5, shadows: false, reducedMotion: false };
+  if (typeof window === "undefined") return { dpr: 1.5, shadows: true, reducedMotion: false };
 
   const memory = navigator.deviceMemory || 4;
   const cores = navigator.hardwareConcurrency || 4;
   const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const isWeakDevice = true;
+  const isWeakDevice = memory <= 4 || cores <= 4 || isSmallScreen || prefersReducedMotion;
 
   return {
     dpr: isWeakDevice ? 1 : Math.min(window.devicePixelRatio || 1, 1.5),
@@ -275,7 +275,7 @@ export default function VegetableModel() {
   shadows={quality.shadows}
 >
         <PerformanceMonitor
-          onDecline={() => setQuality((current) => ({ ...current, dpr: 1, shadows: false }))}
+          onDecline={() => setQuality((current) => ({ ...current, dpr: 1, shadows: true }))}
           onIncline={() => setQuality((current) => ({ ...current, dpr: Math.min(1.5, current.dpr + 0.15) }))}
         />
         <ambientLight intensity={1.25} />
