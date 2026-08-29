@@ -263,137 +263,253 @@ function ThreeBackdrop({ theme }) {
   const stateRef = useRef({});
 
   useEffect(() => {
+    const reduce =
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
     const canvas = canvasRef.current;
+
     if (!canvas) return undefined;
 
-    if (isMobile) return undefined;
+    const frameInterval = isMobile ? 1000 / 30 : 1000 / 60;
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    let running = true;
+    let raf = null;
+    let lastFrame = 0;
+    let t = 0;
 
-    renderer.setPixelRatio( 
-      isMobile ? Math.min(window.devicePixelRatio, 1) : Math.min(window.devicePixelRatio, 1.5)
-    ); 
-   renderer.setClearColor(0x000000, 0);
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: !isMobile,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
+
+    renderer.setPixelRatio(
+      isMobile
+        ? Math.min(window.devicePixelRatio, 1)
+        : Math.min(window.devicePixelRatio, 1.5)
+    );
+
+    renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
+
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
     camera.position.set(0, 0, 4.8);
 
-    const outerMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.32 });
-    const outer = new THREE.Mesh(new THREE.TorusKnotGeometry(1.25, 0.36, 80, 12, 2, 3), outerMat);
+    // MODELO EXTERNO
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: 0x3b82f6,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.32,
+    });
+
+    const outer = new THREE.Mesh(
+      new THREE.TorusKnotGeometry(
+        1.25,
+        0.36,
+        isMobile ? 40 : 80,
+        isMobile ? 8 : 12,
+        2,
+        3
+      ),
+      outerMat
+    );
+
     scene.add(outer);
 
-    const innerMat = new THREE.MeshBasicMaterial({ color: 0x1d4ed8, wireframe: true, transparent: true, opacity: 0.14 });
-    const inner = new THREE.Mesh(new THREE.TorusKnotGeometry(1.15, 0.2, 50, 8, 2, 3), innerMat);
+    // MODELO INTERNO
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0x1d4ed8,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.14,
+    });
+
+    const inner = new THREE.Mesh(
+      new THREE.TorusKnotGeometry(
+        1.15,
+        0.2,
+        isMobile ? 30 : 50,
+        isMobile ? 6 : 8,
+        2,
+        3
+      ),
+      innerMat
+    );
+
     scene.add(inner);
 
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-    const count = isMobile ? 100 : 250;
+    // PARTÍCULAS
+    const count = isMobile ? 80 : 250;
+
     const pos = new Float32Array(count * 3);
+
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 16;
       pos[i * 3 + 1] = (Math.random() - 0.5) * 10;
       pos[i * 3 + 2] = (Math.random() - 0.5) * 8 - 1;
     }
+
     const pGeo = new THREE.BufferGeometry();
-    pGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    const pMat = new THREE.PointsMaterial({ color: 0x60a5fa, size: 0.03, transparent: true, opacity: 0.4 });
+
+    pGeo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(pos, 3)
+    );
+
+    const pMat = new THREE.PointsMaterial({
+      color: 0x60a5fa,
+      size: isMobile ? 0.025 : 0.03,
+      transparent: true,
+      opacity: 0.4,
+    });
+
     const particles = new THREE.Points(pGeo, pMat);
+
     scene.add(particles);
 
-    stateRef.current = { renderer, scene, camera, outer, inner, outerMat, innerMat, particles };
+    stateRef.current = {
+      renderer,
+      scene,
+      camera,
+      outer,
+      inner,
+      outerMat,
+      innerMat,
+      particles,
+    };
 
     function resize() {
       const parent = canvas.parentElement;
+
+      if (!parent) return;
+
       const w = parent.clientWidth;
       const h = parent.clientHeight;
+
       renderer.setSize(w, h, false);
+
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     }
 
     resize();
+
     window.addEventListener("resize", resize);
 
     let px = 0;
     let py = 0;
+
     const onPointerMove = (clientX, clientY) => {
       px = (clientX / window.innerWidth - 0.5) * 2;
       py = (clientY / window.innerHeight - 0.5) * 2;
     };
-    const onMouseMove = (event) => onPointerMove(event.clientX, event.clientY);
-    const onTouchMove = (event) => {
-      if (event.touches && event.touches[0]) onPointerMove(event.touches[0].clientX, event.touches[0].clientY);
+
+    const onMouseMove = (event) => {
+      onPointerMove(event.clientX, event.clientY);
     };
 
-
-    if (!isMobile) {  
-    window.addEventListener("mousemove", onMouseMove);
-
+    if (!isMobile) {
+      window.addEventListener("mousemove", onMouseMove);
     }
-    //window.addEventListener("touchmove", onTouchMove, { passive: true });
 
-    let raf;
-let t = 0;
-let lastFrame = 0;
+    // PAUSAR QUANDO A ABA NÃO ESTIVER VISÍVEL
+    const handleVisibility = () => {
+      running = !document.hidden;
 
-function animate(time) {
-  const handleVisibility = () => {
-    running = !document.hidden;
+      if (running && !reduce) {
+        lastFrame = performance.now();
+        raf = requestAnimationFrame(animate);
+      }
+    };
 
-    if (running) {
-      cancelAnimationFrame(raf);
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility
+    );
+
+    function animate(time) {
+      if (!running) return;
+
+      raf = requestAnimationFrame(animate);
+
+      if (time - lastFrame < frameInterval) {
+        return;
+      }
+
+      lastFrame = time;
+
+      t += isMobile ? 0.007 : 0.0045;
+
+      outer.rotation.x =
+        t * 0.35 + py * 0.35;
+
+      outer.rotation.y =
+        t * 0.5 + px * 0.45;
+
+      inner.rotation.x =
+        -t * 0.28 - py * 0.2;
+
+      inner.rotation.y =
+        t * 0.4 + px * 0.25;
+
+      particles.rotation.y =
+        t * 0.05 + px * 0.08;
+
+      particles.rotation.x =
+        Math.sin(t * 0.3) * 0.1;
+
+      outerMat.opacity =
+        0.26 + Math.sin(t * 1.1) * 0.06;
+
+      renderer.render(scene, camera);
+    }
+
+    // PRIMEIRO RENDER
+    renderer.render(scene, camera);
+
+    if (!reduce) {
       raf = requestAnimationFrame(animate);
     }
 
-
-  };
-
-  document.addEventListener("visibilitychange", handleVisibility);
-
-
-  if (time - lastFrame < frameInterval) return;
-
-  lastFrame = time;
-
-  t += isMobile ? 0.007 : 0.0045;
-
-  outer.rotation.x = t * 0.35 + py * 0.35;
-  outer.rotation.y = t * 0.5 + px * 0.45;
-
-  inner.rotation.x = -t * 0.28 - py * 0.2;
-  inner.rotation.y = t * 0.4 + px * 0.25;
-
-  particles.rotation.y = t * 0.05 + px * 0.08;
-  particles.rotation.x = Math.sin(t * 0.3) * 0.1;
-
-  outerMat.opacity = 0.26 + Math.sin(t * 1.1) * 0.06;
-
-  renderer.render(scene, camera);
-}
-    if (reduce) renderer.render(scene, camera);
-    else animate();
-
     return () => {
-      cancelAnimationFrame(raf);
+      running = false;
+
+      if (raf) {
+        cancelAnimationFrame(raf);
+      }
+
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("touchmove", onTouchMove);
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
+      );
+
       outer.geometry.dispose();
       outerMat.dispose();
+
       inner.geometry.dispose();
       innerMat.dispose();
+
       pGeo.dispose();
       pMat.dispose();
+
       renderer.dispose();
     };
   }, []);
 
   useEffect(() => {
     const state = stateRef.current;
+
     if (!state.outerMat) return;
+
     if (theme === "light") {
       state.outerMat.color.set(0x1d4ed8);
       state.innerMat.color.set(0x2563eb);
@@ -407,7 +523,13 @@ function animate(time) {
     }
   }, [theme]);
 
-  return <canvas ref={canvasRef} className="ll-three-canvas" aria-hidden="true" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="ll-three-canvas"
+      aria-hidden="true"
+    />
+  );
 }
 
 function useParticles(count = 14) {
