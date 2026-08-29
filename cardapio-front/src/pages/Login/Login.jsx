@@ -268,8 +268,6 @@ function ThreeBackdrop({ theme }) {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
     if (isMobile) return undefined;
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
