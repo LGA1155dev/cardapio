@@ -1,4 +1,4 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import gsap from "gsap";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -37,6 +37,7 @@ function VegetableScene({ quality, pointerRef }) {
   const groupRef = useRef(null);
   const motionRef = useRef({ scroll: 0, x: 0, y: 0, depth: 0, section: 0 });
   const { scene } = useGLTF(MODEL_PATH);
+  const { camera } = useThree();
 
   const { model, scale, shadowY } = useMemo(() => {
     const cloned = scene.clone(true);
@@ -129,8 +130,15 @@ function VegetableScene({ quality, pointerRef }) {
 
     state.camera.position.x = MathUtils.lerp(state.camera.position.x, motion.x * -0.45 + pointer.x * -0.18, 0.04);
     state.camera.position.y = MathUtils.lerp(state.camera.position.y, 0.55 + motion.section * 0.18, 0.035);
+
+  })
+  
+    useEffect(() => {
+
     state.camera.lookAt(0, 0.06, 0);
-  });
+    
+  }, [camera]);
+
 
   return (
     <>
@@ -266,7 +274,7 @@ const [quality, setQuality] = useState(getInitialQuality);
       <span className="vegetable-model__spark vegetable-model__spark--three" />
       <Canvas
         camera={{ position: [0, 0.55, 5.4], fov: 32 }}
-        dpr={[1, quality.dpr]}
+        dpr={quality.dpr}
         gl={{
           antialias: false,
           powerPreference: "high-performance",
