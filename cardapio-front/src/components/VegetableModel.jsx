@@ -266,7 +266,7 @@ export default function VegetableModel() {
       <span className="vegetable-model__spark vegetable-model__spark--three" />
       <Canvas
         camera={{ position: [0, 0.55, 5.4], fov: 32 }}
-        dpr={1}
+        dpr={[1, quality.dpr]}
         gl={{
           antialias: false,
           powerPreference: "high-performance",
