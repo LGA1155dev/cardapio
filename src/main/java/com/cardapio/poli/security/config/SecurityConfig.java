@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${APP_FRONTEND_URL:}")
+    @Value("${APP_FRONTEND_URL:${app.frontend-url:}}")
     private String frontendUrl;
 
     @Bean
@@ -60,6 +61,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/usuarios/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Não autenticado"))
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -78,7 +83,12 @@ public class SecurityConfig {
         ));
 
         if (frontendUrl != null && !frontendUrl.isBlank()) {
-            origins.add(frontendUrl);
+            for (String origin : frontendUrl.split(",")) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty()) {
+                    origins.add(trimmed);
+                }
+            }
         }
 
         config.setAllowedOriginPatterns(origins);

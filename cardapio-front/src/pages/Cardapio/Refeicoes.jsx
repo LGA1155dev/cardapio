@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { Link } from "react-router-dom";
 import { FiEdit2, FiMoon, FiSun, FiTrash2 } from "react-icons/fi";
 import { api } from "../../services/api";
+import { WEEK_ANCHOR, getCurrentWeekInfo, sameWeek, shiftWeek } from "../../utils/semanaCardapio";
 
 const VegetableModel = lazy(() => import("../../components/VegetableModel.jsx"));
 
@@ -16,12 +17,6 @@ const DAYS = [
   "Sabado",
   "Sábado",
 ];
-
-const WEEK_ANCHOR = {
-  date: "2026-08-24",
-  trimestre: 2,
-  semana: 4,
-};
 
 const MEAL_TYPES = [
   { key: "CAFE_DA_MANHA", label: "Café da manhã", itemLabel: "café da manhã", icon: "☕" },
@@ -45,18 +40,6 @@ const normalizeType = (tipo) => {
   return "ALMOCO";
 };
 const getTypeMeta = (tipo) => MEAL_TYPES.find((type) => type.key === normalizeType(tipo)) || MEAL_TYPES[0];
-
-const getCurrentWeekInfo = () => {
-  const anchor = new Date(`${WEEK_ANCHOR.date}T00:00:00`);
-  const now = new Date();
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const diffWeeks = Math.max(0, Math.floor((now - anchor) / msPerWeek));
-
-  return {
-    trimestre: WEEK_ANCHOR.trimestre,
-    semana: WEEK_ANCHOR.semana + diffWeeks,
-  };
-};
 
 const DAY_META = {
   "Segunda-feira": { short: "SEG", date: "20", order: 1 },
@@ -227,6 +210,9 @@ const CSS = `
 @media(max-width:900px){.pl-hero-inner{grid-template-columns:1fr;text-align:center}.pl-hero p{margin-left:auto;margin-right:auto}.pl-hero-actions{justify-content:center}.pl-model-wrap{min-height:340px}.pl-model-card{height:340px;width:min(100%,360px)}}
 @media(max-width:560px){.pl-hero{padding:34px 16px 30px}.pl-model-wrap{min-height:280px}.pl-model-card{height:280px}.pl-root .vegetable-model{min-height:260px}.pl-hero h1{font-size:34px}}
 
+.pl-week-nav{display:flex;align-items:center;justify-content:center;gap:10px;padding:0 24px 18px}
+.pl-week-nav button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--forest-deep);font-weight:800}
+.pl-week-nav b{font-size:13px;color:var(--ink)}
 .pl-tabs{display:flex;gap:9px;justify-content:center;overflow-x:auto;padding:4px 4px 30px;scrollbar-width:none}
 .pl-tabs::-webkit-scrollbar{display:none}
 .pl-tab{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 18px;border-radius:14px;border:1px solid var(--line);background:var(--paper);transition:all .25s cubic-bezier(.34,1.4,.64,1);position:relative}
@@ -747,7 +733,7 @@ export default function Refeicoes() {
   const undoTimerRef = useRef(null);
   const isAdmin = isAdminRole(localStorage.getItem("role"));
   const isAuthenticated = Boolean(localStorage.getItem("token")) && localStorage.getItem("authMode") !== "guest";
-  const currentWeek = useMemo(() => getCurrentWeekInfo(), []);
+  const [currentWeek, setCurrentWeek] = useState(getCurrentWeekInfo);
 
   useEffect(() => {
     localStorage.setItem("cardapio-theme", theme);
@@ -791,10 +777,8 @@ export default function Refeicoes() {
   }, []);
 
   const currentWeekMeals = useMemo(() => (
-    refeicoes.filter((refeicao) => (
-      refeicao.trimestre === currentWeek.trimestre && refeicao.semana === currentWeek.semana
-    ))
-  ), [currentWeek.semana, currentWeek.trimestre, refeicoes]);
+    refeicoes.filter((refeicao) => sameWeek(refeicao, currentWeek))
+  ), [currentWeek, refeicoes]);
 
   useEffect(() => {
     if (currentWeekMeals.length === 0) {
@@ -1072,6 +1056,23 @@ export default function Refeicoes() {
       </section>
 
       <section className="pl-section">
+        <div className="pl-week-nav">
+          <button
+            type="button"
+            aria-label="Semana anterior"
+            onClick={() => setCurrentWeek((week) => shiftWeek(week, -1))}
+          >
+            ‹
+          </button>
+          <b>Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre</b>
+          <button
+            type="button"
+            aria-label="Próxima semana"
+            onClick={() => setCurrentWeek((week) => shiftWeek(week, 1))}
+          >
+            ›
+          </button>
+        </div>
         <div className="pl-tabs">
           {availableDays.map((day) => (
             <button

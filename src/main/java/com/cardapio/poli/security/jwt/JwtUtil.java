@@ -9,6 +9,7 @@ import org.springframework.core.env.Profiles;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
@@ -70,7 +71,11 @@ public class JwtUtil {
     }
 
     private Key buildKey(Environment environment) {
-        String secret = System.getenv("JWT_SECRET");
+        String secret = environment.getProperty("JWT_SECRET");
+
+        if (secret == null || secret.isBlank()) {
+            secret = System.getenv("JWT_SECRET");
+        }
 
         if (secret == null || secret.isBlank()) {
             if (environment.acceptsProfiles(Profiles.of("prod", "production"))) {
@@ -80,6 +85,6 @@ public class JwtUtil {
             return Keys.secretKeyFor(SignatureAlgorithm.HS256);
         }
 
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }

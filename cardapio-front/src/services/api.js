@@ -30,7 +30,7 @@ function saveAuthData(accessToken, usuario) {
 
   if (usuario) {
     localStorage.setItem(USER_KEY, JSON.stringify(usuario));
-    localStorage.setItem(ROLE_KEY, usuario.role);
+    localStorage.setItem(ROLE_KEY, usuario.role || "");
   }
 }
 

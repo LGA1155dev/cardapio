@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -52,7 +53,23 @@ class RefeicaoSecurityTests {
         mockMvc.perform(post("/refeicao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(refeicaoJson()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getRefeicaoComTokenInvalidoContinuaPublico() throws Exception {
+        mockMvc.perform(get("/refeicao")
+                        .header("Authorization", "Bearer token-invalido"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void postRefeicaoComTokenInvalidoNaoAutentica() throws Exception {
+        mockMvc.perform(post("/refeicao")
+                        .header("Authorization", "Bearer token-invalido")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(refeicaoJson()))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -75,6 +92,13 @@ class RefeicaoSecurityTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(refeicaoJson()))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(get("/refeicao"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Arroz, feijao e salada"))
+                .andExpect(jsonPath("$[0].trimestre").value(2))
+                .andExpect(jsonPath("$[0].semana").value(4))
+                .andExpect(jsonPath("$[0].tipo").value("ALMOCO"));
     }
 
     private void salvarUsuario(String nome, String email, String senha, String role) {

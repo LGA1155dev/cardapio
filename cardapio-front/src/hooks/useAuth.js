@@ -30,12 +30,12 @@ export function useAuth({ autoCheck = true } = {}) {
       const usuario = response.data?.usuario || response.data;
 
       if (usuario) {
-        authService.saveAuthData(token, usuario);
+        authService.saveAuthData(localStorage.getItem("token") || token, usuario);
         setUser(usuario);
         return true;
       }
     } catch (err) {
-      if (err.authRefreshFailed || err.response?.status === 401 || err.response?.status === 403) {
+      if (err.authRefreshFailed || err.response?.status === 401) {
         authService.clearAuthStorage();
         setUser(null);
         return false;

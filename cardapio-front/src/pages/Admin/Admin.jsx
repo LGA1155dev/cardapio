@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../services/api";
+import { getCurrentWeekInfo } from "../../utils/semanaCardapio";
 import "./Admin.css";
 
 const TRIMESTERS = [1, 2, 3, 4];
@@ -21,10 +22,11 @@ export default function Admin() {
     if (saved === "dark" || saved === "light") return saved;
     return "dark";
   });
+  const initialWeek = getCurrentWeekInfo();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [trimestre, setTrimestre] = useState(2);
-  const [semana, setSemana] = useState(4);
+  const [trimestre, setTrimestre] = useState(initialWeek.trimestre);
+  const [semana, setSemana] = useState(initialWeek.semana);
   const [tipo, setTipo] = useState("ALMOCO");
   const [calories, setCalories] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -132,8 +134,6 @@ export default function Admin() {
       setStatus({ type: "success", message: "Comida publicada no cardápio." });
       setName("");
       setDescription("");
-      setTrimestre(2);
-      setSemana(4);
       setTipo("ALMOCO");
       setCalories("");
       setImageUrl("");
@@ -141,12 +141,16 @@ export default function Admin() {
       setFileName("");
       }
       catch (error) {
+      const statusCode = error.response?.status;
+      const serverMessage = error.response?.data?.message || error.response?.data?.error;
       setStatus({
         type: "error",
         message:
-          error.response?.status === 403
-            ? "Seu usuário não tem permissão de admin."
-            : "Não foi possível publicar agora.",
+          statusCode === 403
+            ? "Seu usuário não tem permissão de administrador no servidor."
+            : statusCode === 401
+              ? "Sessão expirada. Entre novamente para publicar."
+              : serverMessage || "Não foi possível publicar agora.",
       });
     } finally {
       setSaving(false);

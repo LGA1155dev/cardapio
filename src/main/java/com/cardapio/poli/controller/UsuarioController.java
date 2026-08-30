@@ -39,8 +39,8 @@ public class UsuarioController {
                         UsuarioService service,
                         JwtUtil jwtUtil,
                         RefreshTokenService refreshTokenService,
-                        @Value("${app.refresh-cookie.secure:false}") boolean refreshCookieSecure,
-                        @Value("${app.refresh-cookie.same-site:Strict}") String refreshCookieSameSite
+                        @Value("${app.refresh-cookie.secure:${REFRESH_COOKIE_SECURE:false}}") boolean refreshCookieSecure,
+                        @Value("${app.refresh-cookie.same-site:${REFRESH_COOKIE_SAME_SITE:Strict}}") String refreshCookieSameSite
                 ){
                     this.service = service;
                     this.jwtUtil = jwtUtil;
@@ -87,7 +87,11 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody Usuario usuario, HttpServletResponse response) {
+    public ResponseEntity<LoginResponse> login(
+            @RequestBody Usuario usuario,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
 
         Usuario auth = service.autenticar(usuario.getEmail(), usuario.getSenha());
 
@@ -97,7 +101,7 @@ public class UsuarioController {
 
         RefreshToken refresh = refreshTokenService.create(auth);
 
-        response.addHeader(HttpHeaders.SET_COOKIE, buildRefreshCookie(refresh.getToken()).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, buildRefreshCookie(refresh.getToken(), request).toString());
 
         return ResponseEntity.ok(new LoginResponse(accessToken, toResponse(auth)));
     }
@@ -130,7 +134,7 @@ public class UsuarioController {
         RefreshToken newRefresh = refreshTokenService.create(oldToken.getUsuario());
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(newRefresh.getToken()).toString())
+                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(newRefresh.getToken(), request).toString())
                 .body(new LoginResponse(newAccessToken, toResponse(oldToken.getUsuario())));
     }
 
@@ -143,7 +147,7 @@ public class UsuarioController {
         }
 
         return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, buildClearRefreshCookie().toString())
+                .header(HttpHeaders.SET_COOKIE, buildClearRefreshCookie(request).toString())
                 .build();
     }
 
@@ -197,23 +201,59 @@ public class UsuarioController {
                 .orElse(null);
     }
 
-    private ResponseCookie buildRefreshCookie(String refreshToken) {
+    private ResponseCookie buildRefreshCookie(String refreshToken, HttpServletRequest request) {
+        CookieFlags flags = cookieFlags(request);
         return ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .secure(refreshCookieSecure)
-                .sameSite(refreshCookieSameSite)
+                .secure(flags.secure())
+                .sameSite(flags.sameSite())
                 .path("/usuarios")
                 .maxAge(Duration.ofDays(7))
                 .build();
     }
 
-    private ResponseCookie buildClearRefreshCookie() {
+    private ResponseCookie buildClearRefreshCookie(HttpServletRequest request) {
+        CookieFlags flags = cookieFlags(request);
         return ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(refreshCookieSecure)
-                .sameSite(refreshCookieSameSite)
+                .secure(flags.secure())
+                .sameSite(flags.sameSite())
                 .path("/usuarios")
                 .maxAge(Duration.ZERO)
                 .build();
     }
+
+    private CookieFlags cookieFlags(HttpServletRequest request) {
+        boolean crossSite = isCrossSiteRequest(request);
+        boolean secure = refreshCookieSecure || (request != null && request.isSecure());
+        String sameSite = refreshCookieSameSite;
+
+        if (crossSite && secure) {
+            sameSite = "None";
+        }
+
+        return new CookieFlags(secure, sameSite);
+    }
+
+    private boolean isCrossSiteRequest(HttpServletRequest request) {
+        if (request == null) {
+            return false;
+        }
+
+        String origin = request.getHeader("Origin");
+        if (origin == null || origin.isBlank()) {
+            return false;
+        }
+
+        try {
+            java.net.URI originUri = java.net.URI.create(origin);
+            String originHost = originUri.getHost();
+            String serverHost = request.getServerName();
+            return originHost != null && serverHost != null && !originHost.equalsIgnoreCase(serverHost);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private record CookieFlags(boolean secure, String sameSite) {}
 }

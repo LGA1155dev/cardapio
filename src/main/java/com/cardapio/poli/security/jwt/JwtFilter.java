@@ -69,10 +69,23 @@ public class JwtFilter extends OncePerRequestFilter {
             }
         } catch (RuntimeException ex) {
             SecurityContextHolder.clearContext();
+            if (isPublicRead(request)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido ou expirado");
             return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isPublicRead(HttpServletRequest request) {
+        if (!"GET".equalsIgnoreCase(request.getMethod()) && !"HEAD".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+
+        String path = request.getRequestURI();
+        return path.equals("/refeicao") || path.startsWith("/refeicao/");
     }
 }
