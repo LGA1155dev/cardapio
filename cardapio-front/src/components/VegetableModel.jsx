@@ -1,10 +1,11 @@
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, PerformanceMonitor, useGLTF } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { PerformanceMonitor, useGLTF } from "@react-three/drei";
 import gsap from "gsap";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Box3, MathUtils, Vector3 } from "three";
 
 const MODEL_PATH = "/models/vegetables.glb";
+const SHADOWS_ENABLED = false;
 
 function canUseWebGL() {
   if (typeof window === "undefined") return false;
@@ -18,34 +19,35 @@ function canUseWebGL() {
 }
 
 function getInitialQuality() {
-  if (typeof window === "undefined") return { dpr: 1.5, shadows: true, reducedMotion: false };
+  if (typeof window === "undefined") return { dpr: 1.25, shadows: SHADOWS_ENABLED, reducedMotion: false };
 
   const memory = navigator.deviceMemory || 4;
   const cores = navigator.hardwareConcurrency || 4;
   const isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
+  const isTouch = window.matchMedia("(pointer: coarse)").matches;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const isWeakDevice = memory <= 4 || cores <= 4 || isSmallScreen || prefersReducedMotion;
+  const isWeakDevice = memory <= 3 || cores <= 4 || (isSmallScreen && (memory <= 4 || cores <= 6)) || prefersReducedMotion;
+  const maxDpr = isTouch || isSmallScreen ? 1.15 : 1.5;
 
   return {
-    dpr: isWeakDevice ? 1 : Math.min(window.devicePixelRatio || 1, 1.5),
-    shadows: !isWeakDevice,
+    dpr: isWeakDevice ? 1 : Math.min(window.devicePixelRatio || 1, maxDpr),
+    shadows: SHADOWS_ENABLED,
     reducedMotion: prefersReducedMotion,
   };
 }
 
-function VegetableScene({ quality, pointerRef }) {
+function VegetableScene({ quality, pointerRef, active }) {
   const groupRef = useRef(null);
   const motionRef = useRef({ scroll: 0, x: 0, y: 0, depth: 0, section: 0 });
   const { scene } = useGLTF(MODEL_PATH);
-  const { camera } = useThree();
 
-  const { model, scale, shadowY } = useMemo(() => {
+  const { model, scale } = useMemo(() => {
     const cloned = scene.clone(true);
 
     cloned.traverse((child) => {
       if (!child.isMesh) return;
-      child.castShadow = quality.shadows;
-      child.receiveShadow = quality.shadows;
+      child.castShadow = false;
+      child.receiveShadow = false;
       child.frustumCulled = true;
     });
 
@@ -59,54 +61,79 @@ function VegetableScene({ quality, pointerRef }) {
     return {
       model: cloned,
       scale: 2.55 / maxAxis,
-      shadowY: -(size.y * (2.55 / maxAxis)) / 2 - 0.08,
     };
-  }, [scene, quality.shadows]);
+  }, [scene]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
     const target = motionRef.current;
+    const hero = document.querySelector(".hero");
+    let raf = 0;
+    let quickSetters = null;
 
-    const updateFromScroll = () => {
+    if (!quality.reducedMotion) {
+      quickSetters = {
+        scroll: gsap.quickTo(target, "scroll", { duration: 0.85, ease: "power3.out" }),
+        x: gsap.quickTo(target, "x", { duration: 0.85, ease: "power3.out" }),
+        y: gsap.quickTo(target, "y", { duration: 0.85, ease: "power3.out" }),
+        depth: gsap.quickTo(target, "depth", { duration: 0.85, ease: "power3.out" }),
+        section: gsap.quickTo(target, "section", { duration: 0.85, ease: "power3.out" }),
+      };
+    }
+
+    const measureScroll = () => {
+      raf = 0;
       const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
       const rawProgress = MathUtils.clamp(window.scrollY / scrollable, 0, 1);
-      const hero = document.querySelector(".hero");
       const heroRect = hero?.getBoundingClientRect();
       const heroProgress = heroRect
         ? MathUtils.clamp(-heroRect.top / Math.max(heroRect.height - window.innerHeight * 0.25, 1), 0, 1)
         : MathUtils.clamp(window.scrollY / Math.max(window.innerHeight, 1), 0, 1);
 
-      gsap.to(target, {
+      const values = {
         scroll: rawProgress,
         x: (heroProgress - 0.5) * 0.72,
         y: heroProgress * -0.18,
         depth: heroProgress * 0.75,
         section: heroProgress,
-        duration: 0.85,
-        ease: "power3.out",
-        overwrite: true,
-      });
+      };
+
+      if (quickSetters) {
+        quickSetters.scroll(values.scroll);
+        quickSetters.x(values.x);
+        quickSetters.y(values.y);
+        quickSetters.depth(values.depth);
+        quickSetters.section(values.section);
+      } else {
+        Object.assign(target, values);
+      }
     };
 
-    updateFromScroll();
+    const updateFromScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(measureScroll);
+    };
+
+    measureScroll();
     window.addEventListener("scroll", updateFromScroll, { passive: true });
     window.addEventListener("resize", updateFromScroll);
 
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener("scroll", updateFromScroll);
       window.removeEventListener("resize", updateFromScroll);
       gsap.killTweensOf(target);
     };
-  }, []);
+  }, [quality.reducedMotion]);
 
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || !active) return;
 
     const elapsed = state.clock.elapsedTime;
     const motion = motionRef.current;
     const pointer = pointerRef.current;
-    const autoSpeed = quality.reducedMotion ? 0 : quality.shadows ? 0.16 : 0.11;
+    const autoSpeed = quality.reducedMotion ? 0 : 0.11;
     const pointerEase = 0.08 + pointer.force * 0.08;
 
     groupRef.current.rotation.y += delta * autoSpeed;
@@ -130,31 +157,14 @@ function VegetableScene({ quality, pointerRef }) {
 
     state.camera.position.x = MathUtils.lerp(state.camera.position.x, motion.x * -0.45 + pointer.x * -0.18, 0.04);
     state.camera.position.y = MathUtils.lerp(state.camera.position.y, 0.55 + motion.section * 0.18, 0.035);
-
-
-
     state.camera.lookAt(0, 0.06, 0);
-    
-});
-
+  });
 
   return (
     <>
       <group ref={groupRef} scale={scale} position={[0, 0, 0]} rotation={[0.28, -0.45, -0.12]}>
         <primitive object={model} />
       </group>
-      
-    {quality.shadows && (
-      
-         <ContactShadows
-        position={[0, shadowY, 0]}
-        opacity={0.34}
-        scale={3.3}
-        blur={1.5}
-        far={4}
-        resolution={64}
-  /> 
-)} 
     </>
   );
 }
@@ -162,29 +172,35 @@ function VegetableScene({ quality, pointerRef }) {
 useGLTF.preload(MODEL_PATH);
 
 export default function VegetableModel() {
-const [quality, setQuality] = useState(getInitialQuality);
+  const [quality, setQuality] = useState(getInitialQuality);
   const [webGLAvailable] = useState(canUseWebGL);
+  const [isVisible, setIsVisible] = useState(true);
   const shellRef = useRef(null);
   const pointerRef = useRef({ x: 0, y: 0, force: 0 });
+  const pointerTweensRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
+    const shell = shellRef.current;
+    if (!shell) return undefined;
+
+    const hero = shell.closest(".hero");
+    let raf = 0;
+    const quickY = gsap.quickTo(shell, "y", { duration: 0.8, ease: "power3.out", overwrite: "auto" });
+
     const updateTravel = () => {
-      const shell = shellRef.current;
-      const hero = shell?.closest(".hero");
-      if (!shell || !hero) return;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (!hero) return;
 
-      const shellRect = shell.getBoundingClientRect();
-      const heroRect = hero.getBoundingClientRect();
-      const progress = MathUtils.clamp(-heroRect.top / Math.max(heroRect.height - window.innerHeight * 0.25, 1), 0, 1);
-      const bottomLimit = Math.max(heroRect.bottom - shellRect.bottom - 28, 0);
+        const shellRect = shell.getBoundingClientRect();
+        const heroRect = hero.getBoundingClientRect();
+        const progress = MathUtils.clamp(-heroRect.top / Math.max(heroRect.height - window.innerHeight * 0.25, 1), 0, 1);
+        const bottomLimit = Math.max(heroRect.bottom - shellRect.bottom - 28, 0);
 
-      gsap.to(shell, {
-        y: bottomLimit * progress,
-        duration: 0.8,
-        ease: "power3.out",
-        overwrite: "auto",
+        quickY(bottomLimit * progress);
       });
     };
 
@@ -193,16 +209,37 @@ const [quality, setQuality] = useState(getInitialQuality);
     window.addEventListener("resize", updateTravel);
 
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener("scroll", updateTravel);
       window.removeEventListener("resize", updateTravel);
-      if (shellRef.current) gsap.killTweensOf(shellRef.current);
+      gsap.killTweensOf(shell);
     };
   }, []);
 
   useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell || typeof IntersectionObserver === "undefined") return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { rootMargin: "160px 0px 160px 0px", threshold: 0 },
+    );
+
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     const pointer = pointerRef.current;
+    pointerTweensRef.current = {
+      x: gsap.quickTo(pointer, "x", { duration: 0.34, ease: "power3.out", overwrite: "auto" }),
+      y: gsap.quickTo(pointer, "y", { duration: 0.34, ease: "power3.out", overwrite: "auto" }),
+      force: gsap.quickTo(pointer, "force", { duration: 0.34, ease: "power3.out", overwrite: "auto" }),
+    };
+
     return () => {
       gsap.killTweensOf(pointer);
+      pointerTweensRef.current = null;
     };
   }, []);
 
@@ -215,14 +252,14 @@ const [quality, setQuality] = useState(getInitialQuality);
     const y = MathUtils.clamp(((event.clientY - rect.top) / rect.height) * 2 - 1, -1, 1);
     const force = event.pointerType === "touch" ? 1 : 0.72;
 
-    gsap.to(pointerRef.current, {
-      x,
-      y,
-      force,
-      duration: event.pointerType === "touch" ? 0.22 : 0.34,
-      ease: "power3.out",
-      overwrite: "auto",
-    });
+    const setters = pointerTweensRef.current;
+    if (setters) {
+      setters.x(x);
+      setters.y(y);
+      setters.force(force);
+    } else {
+      Object.assign(pointerRef.current, { x, y, force });
+    }
   };
 
   const settlePointer = () => {
@@ -273,29 +310,29 @@ const [quality, setQuality] = useState(getInitialQuality);
       <Canvas
         camera={{ position: [0, 0.55, 5.4], fov: 32 }}
         dpr={quality.dpr}
+        frameloop={isVisible && !quality.reducedMotion ? "always" : "demand"}
         gl={{
           antialias: false,
           powerPreference: "high-performance",
           alpha: true,
-      }}
-  shadows={quality.shadows}
->
+        }}
+        shadows={false}
+        onCreated={({ gl }) => {
+          gl.shadowMap.enabled = false;
+        }}
+      >
         <PerformanceMonitor
-          onDecline={() => setQuality((current) => ({ ...current, dpr: 1, shadows: true }))}
-          onIncline={() => setQuality((current) => ({ ...current, dpr: Math.min(1.5, current.dpr + 0.15) }))}
+          onDecline={() => setQuality((current) => ({ ...current, dpr: 1, shadows: SHADOWS_ENABLED }))}
+          onIncline={() => setQuality((current) => ({ ...current, dpr: Math.min(1.5, current.dpr + 0.1), shadows: SHADOWS_ENABLED }))}
         />
         <ambientLight intensity={1.25} />
         <directionalLight
-          castShadow={quality.shadows}
           position={[3.5, 5, 4.5]}
           intensity={2.15}
-          shadow-mapSize={[256, 256]}
-          shadow-camera-near={0.5}
-          shadow-camera-far={14}
         />
         <spotLight position={[-4, 3, 3]} intensity={1.4} angle={0.45} penumbra={1} />
         <Suspense fallback={null}>
-          <VegetableScene quality={quality} pointerRef={pointerRef} />
+          <VegetableScene quality={quality} pointerRef={pointerRef} active={isVisible && !quality.reducedMotion} />
         </Suspense>
       </Canvas>
     </div>

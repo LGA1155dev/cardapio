@@ -273,7 +273,8 @@ function ThreeBackdrop({ theme }) {
 
     if (!canvas) return undefined;
 
-    const frameInterval = isMobile ? 1000 / 30 : 1000 / 60;
+    const lowMemory = (navigator.deviceMemory || 4) <= 3 || (navigator.hardwareConcurrency || 4) <= 4;
+    const frameInterval = isMobile || lowMemory ? 1000 / 24 : 1000 / 60;
 
     let running = true;
     let raf = null;
@@ -422,7 +423,12 @@ function ThreeBackdrop({ theme }) {
     const handleVisibility = () => {
       running = !document.hidden;
 
-      if (running && !reduce) {
+      if (!running && raf) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+
+      if (running && !reduce && !raf) {
         lastFrame = performance.now();
         raf = requestAnimationFrame(animate);
       }
@@ -434,7 +440,10 @@ function ThreeBackdrop({ theme }) {
     );
 
     function animate(time) {
-      if (!running) return;
+      if (!running) {
+        raf = null;
+        return;
+      }
 
       raf = requestAnimationFrame(animate);
 
@@ -502,6 +511,7 @@ function ThreeBackdrop({ theme }) {
       pMat.dispose();
 
       renderer.dispose();
+      renderer.forceContextLoss();
     };
   }, []);
 
@@ -568,6 +578,7 @@ export default function Login() {
 
   const spotRef = useRef(null);
   const rafRef = useRef(null);
+  const navTimersRef = useRef([]);
   const particles = useParticles(14);
 
   useEffect(() => {
@@ -608,6 +619,13 @@ export default function Login() {
     setErrors((current) => ({ ...current, auth: error }));
   }, [error]);
 
+  useEffect(() => (
+    () => {
+      navTimersRef.current.forEach((timer) => clearTimeout(timer));
+      navTimersRef.current = [];
+    }
+  ), []);
+
   const validate = () => {
     const next = {};
     if (mode === "register" && !name.trim()) next.name = "Informe seu nome.";
@@ -632,7 +650,8 @@ export default function Login() {
     if (ok) {
       setStatus("success");
       setToast(mode === "register" ? "Conta criada com sucesso." : "Login validado com sucesso.");
-      setTimeout(() => navigate("/refeicao"), 650);
+      const timer = setTimeout(() => navigate("/refeicao"), 650);
+      navTimersRef.current.push(timer);
       return;
     }
 
@@ -644,7 +663,8 @@ export default function Login() {
     authService.enterGuest();
     setGuestStatus("success");
     setToast("Acesso liberado como convidado.");
-    setTimeout(() => navigate("/refeicao"), 450);
+    const timer = setTimeout(() => navigate("/refeicao"), 450);
+    navTimersRef.current.push(timer);
   };
 
   const busy = loading || status === "loading" || guestStatus === "loading";
