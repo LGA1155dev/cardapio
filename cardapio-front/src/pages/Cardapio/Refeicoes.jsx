@@ -87,16 +87,14 @@ const toBackendRefeicao = (refeicao) => ({
   tipo: normalizeType(refeicao.tipo || refeicao.tag),
 });
 
-const sortByDay = (a, b) => {
-  const dayOrderA = DAY_META[a.dayWeek]?.order || 99;
-  const dayOrderB = DAY_META[b.dayWeek]?.order || 99;
-  if (dayOrderA !== dayOrderB) return dayOrderA - dayOrderB;
+const getNumericId = (refeicao) => {
+  const id = Number(refeicao.id);
+  return Number.isFinite(id) ? id : Number.MAX_SAFE_INTEGER;
+};
 
-  const orderA = MEAL_TYPES.findIndex((type) => type.key === normalizeType(a.tipo));
-  const orderB = MEAL_TYPES.findIndex((type) => type.key === normalizeType(b.tipo));
-  const typeOrderA = orderA === -1 ? 99 : orderA;
-  const typeOrderB = orderB === -1 ? 99 : orderB;
-  return typeOrderA - typeOrderB || a.name.localeCompare(b.name);
+const sortById = (a, b) => {
+  const idOrder = getNumericId(a) - getNumericId(b);
+  return idOrder || String(a.name || "").localeCompare(String(b.name || ""));
 };
 
 const isAdminRole = (role) => {
@@ -759,7 +757,7 @@ export default function Refeicoes() {
       .get("/refeicao")
       .then((response) => {
         if (!mounted) return;
-        const meals = response.data.map(normalizeRefeicao).sort(sortByDay);
+        const meals = response.data.map(normalizeRefeicao).sort(sortById);
         setRefeicoes(meals);
         setActiveId((current) => current || meals[0]?.id || null);
         setFetchError("");
@@ -915,7 +913,7 @@ export default function Refeicoes() {
 
     setRefeicoes((current) => current.map((refeicao) => (
       refeicao.id === updated.id ? updated : refeicao
-    )).sort(sortByDay));
+    )).sort(sortById));
     setSelected((current) => current?.id === updated.id ? updated : current);
     setActiveId(updated.id);
   };
@@ -938,7 +936,7 @@ export default function Refeicoes() {
       setRefeicoes((current) => (
         current.some((refeicao) => refeicao.id === meal.id)
           ? current
-          : [...current, meal].sort(sortByDay)
+          : [...current, meal].sort(sortById)
       ));
       setUndoDelete({
         meal,
@@ -964,7 +962,7 @@ export default function Refeicoes() {
       setRefeicoes((current) => (
         current.some((refeicao) => refeicao.id === restored.id)
           ? current
-          : [...current, restored].sort(sortByDay)
+          : [...current, restored].sort(sortById)
       ));
       setActiveId(restored.id);
       setUndoDelete(null);

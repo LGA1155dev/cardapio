@@ -1,7 +1,7 @@
 export const WEEK_ANCHOR = {
   date: "2026-08-24",
   trimestre: 2,
-  semana: 4,
+  semana: 5,
 };
 
 export function getCurrentWeekInfo(now = new Date()) {
@@ -21,7 +21,7 @@ export function sameWeek(refeicao, week) {
 }
 
 export function shiftWeek(week, delta) {
-  const nextSemana = Math.min(60, Math.max(1, Number(week.semana) + delta));
+  const nextSemana = Math.min(60, Math.max(WEEK_ANCHOR.semana, Number(week.semana) + delta));
   return {
     trimestre: Number(week.trimestre),
     semana: nextSemana,
