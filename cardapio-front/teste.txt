@@ -1,0 +1,132 @@
+                                                                                                                                             
+┌──(gabriel㉿kali)-[~/Downloads/poli/cardapio-front]
+└─$ grep -RniE "Math.max|sort|reduce|maior|latest|last|week" src --exclude-dir=node_modules --exclude="*.bkp"
+src/utils/semanaCardapio.js:1:export const WEEK_ANCHOR = {
+src/utils/semanaCardapio.js:7:export function getCurrentWeekInfo(now = new Date()) {
+src/utils/semanaCardapio.js:8:  const anchor = new Date(`${WEEK_ANCHOR.date}T00:00:00`);
+src/utils/semanaCardapio.js:9:  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+src/utils/semanaCardapio.js:10:  const diffWeeks = Math.max(0, Math.floor((now - anchor) / msPerWeek));
+src/utils/semanaCardapio.js:13:    trimestre: WEEK_ANCHOR.trimestre,
+src/utils/semanaCardapio.js:14:    semana: WEEK_ANCHOR.semana + diffWeeks,
+src/utils/semanaCardapio.js:18:export function sameWeek(refeicao, week) {
+src/utils/semanaCardapio.js:19:  return Number(refeicao.trimestre) === Number(week.trimestre)
+src/utils/semanaCardapio.js:20:    && Number(refeicao.semana) === Number(week.semana);
+src/utils/semanaCardapio.js:23:export function shiftWeek(week, delta) {
+src/utils/semanaCardapio.js:24:  const nextSemana = Math.min(60, Math.max(WEEK_ANCHOR.semana, Number(week.semana) + delta));
+src/utils/semanaCardapio.js:26:    trimestre: Number(week.trimestre),
+src/pages/index.css:1258:.modal__stat:last-child { border-right: none; }
+src/pages/index.css:1615:  .modal__stat:last-child { border-bottom: none; }
+src/pages/Login/Login.jsx:203:@media(prefers-reduced-motion:reduce){
+src/pages/Login/Login.jsx:266:    const reduce =
+src/pages/Login/Login.jsx:268:      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+src/pages/Login/Login.jsx:281:    let lastFrame = 0;
+src/pages/Login/Login.jsx:431:      if (running && !reduce && !raf) {
+src/pages/Login/Login.jsx:432:        lastFrame = performance.now();
+src/pages/Login/Login.jsx:450:      if (time - lastFrame < frameInterval) {
+src/pages/Login/Login.jsx:454:      lastFrame = time;
+src/pages/Login/Login.jsx:485:    if (!reduce) {
+src/pages/Login/Login.jsx:589:    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+src/pages/Login/Login.jsx:590:    if (reduce) return undefined;
+src/pages/Admin/Admin.jsx:4:import { getCurrentWeekInfo } from "../../utils/semanaCardapio";
+src/pages/Admin/Admin.jsx:25:  const initialWeek = getCurrentWeekInfo();
+src/pages/Admin/Admin.jsx:28:  const [trimestre, setTrimestre] = useState(initialWeek.trimestre);
+src/pages/Admin/Admin.jsx:29:  const [semana, setSemana] = useState(initialWeek.semana);
+src/pages/Admin/Admin.jsx:125:        dayWeek: "",
+src/pages/Cardapio/Refeicoes.jsx:5:import { WEEK_ANCHOR, getCurrentWeekInfo, sameWeek, shiftWeek } from "../../utils/semanaCardapio";
+src/pages/Cardapio/Refeicoes.jsx:72:  trimestre: refeicao.trimestre || WEEK_ANCHOR.trimestre,
+src/pages/Cardapio/Refeicoes.jsx:73:  semana: refeicao.semana || WEEK_ANCHOR.semana,
+src/pages/Cardapio/Refeicoes.jsx:74:  dayWeek: refeicao.dayWeek || "",
+src/pages/Cardapio/Refeicoes.jsx:82:  dayWeek: refeicao.dayWeek || "",
+src/pages/Cardapio/Refeicoes.jsx:85:  trimestre: refeicao.trimestre || WEEK_ANCHOR.trimestre,
+src/pages/Cardapio/Refeicoes.jsx:86:  semana: refeicao.semana || WEEK_ANCHOR.semana,
+src/pages/Cardapio/Refeicoes.jsx:95:const sortById = (a, b) => {
+src/pages/Cardapio/Refeicoes.jsx:211:.pl-week-nav{display:flex;align-items:center;justify-content:center;gap:10px;padding:0 24px 18px}
+src/pages/Cardapio/Refeicoes.jsx:212:.pl-week-nav button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--forest-deep);font-weight:800}
+src/pages/Cardapio/Refeicoes.jsx:213:.pl-week-nav b{font-size:13px;color:var(--ink)}
+src/pages/Cardapio/Refeicoes.jsx:278:.pl-week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+src/pages/Cardapio/Refeicoes.jsx:279:@media(max-width:980px){.pl-week-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.pl-week-grid{grid-template-columns:repeat(2,1fr)}.pl-section{padding:42px 16px}}
+src/pages/Cardapio/Refeicoes.jsx:280:.pl-week-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s,border-color .2s;opacity:0;transform:translateY(16px);position:relative;content-visibility:auto;contain-intrinsic-size:210px}
+src/pages/Cardapio/Refeicoes.jsx:281:.pl-week-card.in{opacity:1;transform:none}
+src/pages/Cardapio/Refeicoes.jsx:282:.pl-week-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px var(--shadow);border-color:var(--forest)}
+src/pages/Cardapio/Refeicoes.jsx:283:.pl-week-card.active{border-color:var(--forest);box-shadow:0 0 0 2px rgba(29,95,191,.18),0 18px 36px rgba(29,95,191,.14)}
+src/pages/Cardapio/Refeicoes.jsx:347:@media(max-width:768px),(prefers-reduced-motion:reduce){.pl-topbar,.pl-modal-bg{backdrop-filter:none;-webkit-backdrop-filter:none}.pl-topbar{background:var(--paper)}.pl-model-card,.pl-ticket{box-shadow:0 12px 28px var(--shadow)}}
+src/pages/Cardapio/Refeicoes.jsx:348:@media(prefers-reduced-motion:reduce){.pl-root *{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}.pl-week-card,.pl-d-card{opacity:1;transform:none}}
+src/pages/Cardapio/Refeicoes.jsx:585:    trimestre: item.trimestre || WEEK_ANCHOR.trimestre,
+src/pages/Cardapio/Refeicoes.jsx:586:    semana: item.semana || WEEK_ANCHOR.semana,
+src/pages/Cardapio/Refeicoes.jsx:737:  const [currentWeek, setCurrentWeek] = useState(getCurrentWeekInfo);
+src/pages/Cardapio/Refeicoes.jsx:760:        const meals = response.data.map(normalizeRefeicao).sort(sortById);
+src/pages/Cardapio/Refeicoes.jsx:780:  const currentWeekMeals = useMemo(() => (
+src/pages/Cardapio/Refeicoes.jsx:781:    refeicoes.filter((refeicao) => sameWeek(refeicao, currentWeek))
+src/pages/Cardapio/Refeicoes.jsx:782:  ), [currentWeek, refeicoes]);
+src/pages/Cardapio/Refeicoes.jsx:785:    if (currentWeekMeals.length === 0) {
+src/pages/Cardapio/Refeicoes.jsx:792:      currentWeekMeals.map((meal) => (
+src/pages/Cardapio/Refeicoes.jsx:805:  }, [currentWeekMeals]);
+src/pages/Cardapio/Refeicoes.jsx:809:    let lastVisible = window.scrollY > 260;
+src/pages/Cardapio/Refeicoes.jsx:810:    setFabVis(lastVisible);
+src/pages/Cardapio/Refeicoes.jsx:815:      if (nextVisible !== lastVisible) {
+src/pages/Cardapio/Refeicoes.jsx:816:        lastVisible = nextVisible;
+src/pages/Cardapio/Refeicoes.jsx:846:    if (filter === "Todos") return currentWeekMeals;
+src/pages/Cardapio/Refeicoes.jsx:847:    return currentWeekMeals.filter((refeicao) => refeicao.dayWeek === filter);
+src/pages/Cardapio/Refeicoes.jsx:848:  }, [currentWeekMeals, filter]);
+src/pages/Cardapio/Refeicoes.jsx:851:    const unique = [...new Set(currentWeekMeals.map((refeicao) => refeicao.dayWeek))];
+src/pages/Cardapio/Refeicoes.jsx:852:    return unique.sort((a, b) => (DAY_META[a]?.order || 99) - (DAY_META[b]?.order || 99));
+src/pages/Cardapio/Refeicoes.jsx:853:  }, [currentWeekMeals]);
+src/pages/Cardapio/Refeicoes.jsx:856:    currentWeekMeals.find((refeicao) => refeicao.id === activeId) || filtered[0] || currentWeekMeals[0] || null
+src/pages/Cardapio/Refeicoes.jsx:857:  ), [activeId, currentWeekMeals, filtered]);
+src/pages/Cardapio/Refeicoes.jsx:862:      meals: currentWeekMeals.filter((meal) => normalizeType(meal.tipo) === type.key),
+src/pages/Cardapio/Refeicoes.jsx:864:  ), [currentWeekMeals]);
+src/pages/Cardapio/Refeicoes.jsx:868:    const totalRatings = summaries.reduce((total, summary) => total + Number(summary?.quantidade || 0), 0);
+src/pages/Cardapio/Refeicoes.jsx:869:    const ratingSum = summaries.reduce((total, summary) => {
+src/pages/Cardapio/Refeicoes.jsx:877:      { t: currentWeekMeals.length, s: "", lbl: "refeicoes da semana" },
+src/pages/Cardapio/Refeicoes.jsx:881:  }, [availableDays.length, currentWeekMeals.length, ratingSummaries]);
+src/pages/Cardapio/Refeicoes.jsx:890:    setFilter(meal.dayWeek);
+src/pages/Cardapio/Refeicoes.jsx:916:    )).sort(sortById));
+src/pages/Cardapio/Refeicoes.jsx:939:          : [...current, meal].sort(sortById)
+src/pages/Cardapio/Refeicoes.jsx:965:          : [...current, restored].sort(sortById)
+src/pages/Cardapio/Refeicoes.jsx:996:          <div className="pl-sp-sub">Semana {currentWeek.semana} - {currentWeek.trimestre}º Trimestre</div>
+src/pages/Cardapio/Refeicoes.jsx:1009:              <small>Semana {currentWeek.semana} - {currentWeek.trimestre}º Trimestre</small>
+src/pages/Cardapio/Refeicoes.jsx:1057:            <span className="pl-eyebrow">Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre</span>
+src/pages/Cardapio/Refeicoes.jsx:1080:        <div className="pl-week-nav">
+src/pages/Cardapio/Refeicoes.jsx:1084:            onClick={() => setCurrentWeek((week) => shiftWeek(week, -1))}
+src/pages/Cardapio/Refeicoes.jsx:1088:          <b>Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre</b>
+src/pages/Cardapio/Refeicoes.jsx:1092:            onClick={() => setCurrentWeek((week) => shiftWeek(week, 1))}
+src/pages/Cardapio/Refeicoes.jsx:1102:              className={`pl-tab${activeMeal?.dayWeek === day ? " on" : ""}`}
+src/pages/Cardapio/Refeicoes.jsx:1105:                const meal = currentWeekMeals.find((refeicao) => refeicao.dayWeek === day);
+src/pages/Cardapio/Refeicoes.jsx:1109:              {currentWeekMeals.some((meal) => meal.dayWeek === day && normalizeType(meal.tipo) !== "ALMOCO") && <span className="dot" />}
+src/pages/Cardapio/Refeicoes.jsx:1120:            Nenhuma refeicao cadastrada para a Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre.
+src/pages/Cardapio/Refeicoes.jsx:1132:              <div className="pl-t-day">{activeMeal.dayWeek} <span>· {getTypeMeta(activeMeal.tipo).itemLabel}</span></div>
+src/pages/Cardapio/Refeicoes.jsx:1169:            <div className="pl-sec-h">Semana {currentWeek.semana} — {currentWeek.trimestre}º Trimestre</div>
+src/pages/Cardapio/Refeicoes.jsx:1187:        <div className="pl-week-grid">
+src/pages/Cardapio/Refeicoes.jsx:1192:              className={`pl-week-card${meal.id === activeMeal?.id ? " active" : ""}`}
+src/pages/Cardapio/Refeicoes.jsx:1210:                <div className="pl-wc-day">{meal.dayWeek}</div>
+src/pages/effectLogin.js:4:   - Sem alocação de array sorted a cada frame (sort in-place com cache)
+src/pages/effectLogin.js:68:  fragments.sort((a, b) => a.z - b.z);
+src/pages/effectLogin.js:87:    const g = ctx.createRadialGradient(W * 0.5, H * 0.45, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.85);
+src/pages/effectLogin.js:189:  const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, Math.max(W, H) * 0.78);
+src/pages/effectLogin.js:256:  const size = Math.max(rect.width, rect.height) * 2.2;
+src/pages/effectLogin.js:274:  return Math.min(scrollY / Math.max(maxScroll, 1), 1);
+src/pages/effect.js:124:  const bgG = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.7);
+src/pages/effect.js:132:  const scale      = 170 + scrollPct * (Math.max(W, H) * 1.5 - 170);
+src/pages/effect.js:135:  const mInfluence = Math.max(0, 1 - mdist / 350);
+src/pages/effect.js:152:    const dStr = Math.max(0, 1 - dfm / 200) * 60 * mInfluence;
+src/pages/effect.js:262:  const size   = Math.max(rect.width, rect.height) * 2;
+src/components/VegetableModel.jsx:22:  if (typeof window === "undefined") return { dpr: 1.25, shadows: SHADOWS_ENABLED, reducedMotion: false };
+src/components/VegetableModel.jsx:28:  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+src/components/VegetableModel.jsx:29:  const isWeakDevice = memory <= 3 || cores <= 4 || (isSmallScreen && (memory <= 4 || cores <= 6)) || prefersReducedMotion;
+src/components/VegetableModel.jsx:35:    reducedMotion: prefersReducedMotion,
+src/components/VegetableModel.jsx:57:    const maxAxis = Math.max(size.x, size.y, size.z) || 1;
+src/components/VegetableModel.jsx:75:    if (!quality.reducedMotion) {
+src/components/VegetableModel.jsx:87:      const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+src/components/VegetableModel.jsx:91:        ? MathUtils.clamp(-heroRect.top / Math.max(heroRect.height - window.innerHeight * 0.25, 1), 0, 1)
+src/components/VegetableModel.jsx:92:        : MathUtils.clamp(window.scrollY / Math.max(window.innerHeight, 1), 0, 1);
+src/components/VegetableModel.jsx:128:  }, [quality.reducedMotion]);
+src/components/VegetableModel.jsx:136:    const autoSpeed = quality.reducedMotion ? 0 : 0.11;
+src/components/VegetableModel.jsx:200:        const progress = MathUtils.clamp(-heroRect.top / Math.max(heroRect.height - window.innerHeight * 0.25, 1), 0, 1);
+src/components/VegetableModel.jsx:201:        const bottomLimit = Math.max(heroRect.bottom - shellRect.bottom - 28, 0);
+src/components/VegetableModel.jsx:271:      ease: "elastic.out(1, 0.55)",
+src/components/VegetableModel.jsx:281:      { force: 0.55, duration: 0.55, ease: "elastic.out(1, 0.45)", overwrite: "auto" },
+src/components/VegetableModel.jsx:313:        frameloop={isVisible && !quality.reducedMotion ? "always" : "demand"}
+src/components/VegetableModel.jsx:335:          <VegetableScene quality={quality} pointerRef={pointerRef} active={isVisible && !quality.reducedMotion} />
+                                                                                                                                             
+┌──(gabriel㉿kali)-[~/Downloads/poli/cardapio-front]
+└─$ 

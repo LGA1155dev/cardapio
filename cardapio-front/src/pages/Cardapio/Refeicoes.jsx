@@ -64,13 +64,13 @@ const SCHOOL_PHONE = "(32) 3261-3100";
 const SCHOOL_HOURS = "Segunda a sexta, 6h30 as 22h";
 const SCHOOL_ADDRESS = "R. João Carlos Knop, 2-130 - São José, São João Nepomuceno - MG, 36680-000";
 
-const normalizeRefeicao = (refeicao) => ({
+const normalizeRefeicao = (refeicao = {}) => ({
   ...refeicao,
   image: refeicao.image || refeicao.imageUrl || "https://via.placeholder.com/700x520",
   tag: normalizeType(refeicao.tipo || refeicao.tag || "ALMOCO"),
   tipo: normalizeType(refeicao.tipo || refeicao.tag || "ALMOCO"),
-  trimestre: refeicao.trimestre || WEEK_ANCHOR.trimestre,
-  semana: refeicao.semana || WEEK_ANCHOR.semana,
+  trimestre: refeicao.trimestre,
+  semana: refeicao.semana,
   dayWeek: refeicao.dayWeek || "",
   price: refeicao.price || "",
   calories: refeicao.calories || 0,
@@ -95,6 +95,51 @@ const getNumericId = (refeicao) => {
 const sortById = (a, b) => {
   const idOrder = getNumericId(a) - getNumericId(b);
   return idOrder || String(a.name || "").localeCompare(String(b.name || ""));
+};
+
+const toValidWeek = (value) => {
+  const trimestre = Number(value?.trimestre);
+  const semana = Number(value?.semana);
+
+  if (
+    !Number.isInteger(trimestre) ||
+    !Number.isInteger(semana) ||
+    trimestre < 1 ||
+    trimestre > 4 ||
+    semana < 1 ||
+    semana > 60
+  ) {
+    return null;
+  }
+
+  return { trimestre, semana };
+};
+
+const compareWeeks = (a, b) => {
+  const weekA = toValidWeek(a);
+  const weekB = toValidWeek(b);
+
+  if (!weekA && !weekB) return 0;
+  if (!weekA) return -1;
+  if (!weekB) return 1;
+  if (weekA.trimestre !== weekB.trimestre) return weekA.trimestre - weekB.trimestre;
+  return weekA.semana - weekB.semana;
+};
+
+const findLatestAvailableWeek = (meals) => (
+  meals.reduce((latest, meal) => {
+    const mealWeek = toValidWeek(meal);
+    if (!mealWeek) return latest;
+    return !latest || compareWeeks(mealWeek, latest) > 0 ? mealWeek : latest;
+  }, null)
+);
+
+const selectInitialWeek = (meals, actualWeek) => {
+  if (meals.some((meal) => sameWeek(meal, actualWeek))) {
+    return actualWeek;
+  }
+
+  return findLatestAvailableWeek(meals) || actualWeek;
 };
 
 const isAdminRole = (role) => {
@@ -757,9 +802,19 @@ export default function Refeicoes() {
       .get("/refeicao")
       .then((response) => {
         if (!mounted) return;
-        const meals = response.data.map(normalizeRefeicao).sort(sortById);
+
+        const payload = Array.isArray(response.data) ? response.data : [];
+        const meals = payload.map(normalizeRefeicao).sort(sortById);
+        const initialWeek = selectInitialWeek(meals, getCurrentWeekInfo());
+        const initialWeekMeals = meals.filter((meal) => sameWeek(meal, initialWeek));
+
         setRefeicoes(meals);
-        setActiveId((current) => current || meals[0]?.id || null);
+        setCurrentWeek(initialWeek);
+        setActiveId((current) => (
+          initialWeekMeals.some((meal) => meal.id === current)
+            ? current
+            : initialWeekMeals[0]?.id || null
+        ));
         setFetchError("");
       })
       .catch(() => {
@@ -852,6 +907,12 @@ export default function Refeicoes() {
     return unique.sort((a, b) => (DAY_META[a]?.order || 99) - (DAY_META[b]?.order || 99));
   }, [currentWeekMeals]);
 
+  useEffect(() => {
+    if (filter !== "Todos" && !availableDays.includes(filter)) {
+      setFilter("Todos");
+    }
+  }, [availableDays, filter]);
+
   const activeMeal = useMemo(() => (
     currentWeekMeals.find((refeicao) => refeicao.id === activeId) || filtered[0] || currentWeekMeals[0] || null
   ), [activeId, currentWeekMeals, filtered]);
@@ -890,6 +951,19 @@ export default function Refeicoes() {
     setFilter(meal.dayWeek);
     introRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setNavOn("hoje");
+  };
+
+  const changeWeek = (delta) => {
+    const nextWeek = shiftWeek(currentWeek, delta);
+    const nextWeekMeals = refeicoes.filter((meal) => sameWeek(meal, nextWeek));
+
+    setCurrentWeek(nextWeek);
+    setFilter("Todos");
+    setActiveId(nextWeekMeals[0]?.id || null);
+
+    if (nextWeekMeals.length === 0 && refeicoes.some((meal) => toValidWeek(meal))) {
+      setToast(`Semana ${nextWeek.semana} sem refeicoes cadastradas.`);
+    }
   };
 
   const handleRated = async (meal, val) => {
@@ -1081,7 +1155,7 @@ export default function Refeicoes() {
           <button
             type="button"
             aria-label="Semana anterior"
-            onClick={() => setCurrentWeek((week) => shiftWeek(week, -1))}
+            onClick={() => changeWeek(-1)}
           >
             ‹
           </button>
@@ -1089,7 +1163,7 @@ export default function Refeicoes() {
           <button
             type="button"
             aria-label="Próxima semana"
-            onClick={() => setCurrentWeek((week) => shiftWeek(week, 1))}
+            onClick={() => changeWeek(1)}
           >
             ›
           </button>
