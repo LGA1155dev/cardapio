@@ -14,12 +14,20 @@ export default function AdminRoute({ children }) {
     let mounted = true;
 
     async function verifyAdmin() {
-      if (localStorage.getItem("authMode") === "guest" || !localStorage.getItem("token")) {
+      const isGuest = localStorage.getItem("authMode") === "guest";
+      const hasToken = Boolean(localStorage.getItem("token"));
+      const hasSavedUser = Boolean(localStorage.getItem("user"));
+
+      if (isGuest || (!hasToken && !hasSavedUser)) {
         if (mounted) setState("login");
         return;
       }
 
       try {
+        if (!hasToken && hasSavedUser) {
+          await authService.refreshAccessToken();
+        }
+
         const response = await authService.me();
         const usuario = response.data?.usuario || response.data;
         authService.saveAuthData(localStorage.getItem("token"), usuario);

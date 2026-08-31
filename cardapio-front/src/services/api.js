@@ -4,6 +4,7 @@ const TOKEN_KEY = "token";
 const USER_KEY = "user";
 const ROLE_KEY = "role";
 const AUTH_MODE_KEY = "authMode";
+const LAST_EMAIL_KEY = "lastLoginEmail";
 const API_BASE_URL = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:8081" : "")).trim().replace(/\/+$/, "");
 
 export const api = axios.create({
@@ -31,7 +32,18 @@ function saveAuthData(accessToken, usuario) {
   if (usuario) {
     localStorage.setItem(USER_KEY, JSON.stringify(usuario));
     localStorage.setItem(ROLE_KEY, usuario.role || "");
+    if (usuario.email) {
+      localStorage.setItem(LAST_EMAIL_KEY, usuario.email);
+    }
   }
+}
+
+function getLastLoginEmail() {
+  return localStorage.getItem(LAST_EMAIL_KEY) || "";
+}
+
+function forgetLastLoginEmail() {
+  localStorage.removeItem(LAST_EMAIL_KEY);
 }
 
 let refreshRequest = null;
@@ -106,7 +118,7 @@ api.interceptors.response.use(
       refreshError.authRefreshFailed = true;
       clearAuthStorage();
 
-      if (window.location.pathname !== "/" && window.location.pathname !== "/login") {
+      if (!isPublicPath(window.location.pathname)) {
         window.location.replace("/");
       }
 
@@ -115,8 +127,14 @@ api.interceptors.response.use(
   }
 );
 
+function isPublicPath(pathname) {
+  return pathname === "/" || pathname === "/login" || pathname === "/refeicao" || pathname === "/cardapio";
+}
+
 export const authService = {
   saveAuthData,
+  getLastLoginEmail,
+  forgetLastLoginEmail,
 
   login(email, senha) {
     return api.post("/usuarios/login", {

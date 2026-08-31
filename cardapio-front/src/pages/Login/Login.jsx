@@ -559,7 +559,7 @@ function useParticles(count = 14) {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, registerAndLogin, loading, error } = useAuth({ autoCheck: false });
+  const { loginOrRegister, registerAndLogin, checkAuth, loading, error } = useAuth({ autoCheck: false });
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("cardapio-theme");
     if (saved === "dark" || saved === "light") return saved;
@@ -567,12 +567,16 @@ export default function Login() {
   });
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => authService.getLastLoginEmail());
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(() => Boolean(authService.getLastLoginEmail()));
   const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState("idle");
+  const [authHydrating, setAuthHydrating] = useState(() => (
+    localStorage.getItem("authMode") !== "guest" &&
+    (Boolean(localStorage.getItem("token")) || Boolean(localStorage.getItem("user")))
+  ));
+  const [status, setStatus] = useState(authHydrating ? "loading" : "idle");
   const [guestStatus, setGuestStatus] = useState("idle");
   const [toast, setToast] = useState(null);
 
@@ -584,6 +588,34 @@ export default function Login() {
   useEffect(() => {
     localStorage.setItem("cardapio-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!authHydrating) return undefined;
+
+    let mounted = true;
+
+    checkAuth()
+      .then((authenticated) => {
+        if (!mounted) return;
+        if (authenticated) {
+          const timer = setTimeout(() => navigate("/refeicao"), 250);
+          navTimersRef.current.push(timer);
+          return;
+        }
+
+        setStatus("idle");
+        setAuthHydrating(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setStatus("idle");
+        setAuthHydrating(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [authHydrating, navigate]);
 
   useEffect(() => {
     const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -645,9 +677,13 @@ export default function Login() {
     setStatus("loading");
     const ok = mode === "register"
       ? await registerAndLogin({ nome: name.trim(), email: email.trim(), password })
-      : await login(email.trim(), password);
+      : await loginOrRegister(email.trim(), password);
 
     if (ok) {
+      if (!remember) {
+        authService.forgetLastLoginEmail();
+      }
+
       setStatus("success");
       setToast(mode === "register" ? "Conta criada com sucesso." : "Login validado com sucesso.");
       const timer = setTimeout(() => navigate("/refeicao"), 650);
@@ -667,7 +703,7 @@ export default function Login() {
     navTimersRef.current.push(timer);
   };
 
-  const busy = loading || status === "loading" || guestStatus === "loading";
+  const busy = authHydrating || loading || status === "loading" || guestStatus === "loading";
   const authError = errors.auth && !errors.email && !errors.password ? errors.auth : "";
 
   return (

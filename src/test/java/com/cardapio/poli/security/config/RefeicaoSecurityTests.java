@@ -1,6 +1,7 @@
 package com.cardapio.poli.security.config;
 
 import com.cardapio.poli.model.Usuario;
+import com.cardapio.poli.repository.RefreshTokenRepository;
 import com.cardapio.poli.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,10 +34,14 @@ class RefeicaoSecurityTests {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @BeforeEach
     void setUp() {
+        refreshTokenRepository.deleteAll();
         usuarioRepository.deleteAll();
         salvarUsuario("Admin", "admin@poli.com", "admin123", "ADMIN");
         salvarUsuario("User", "user@poli.com", "user123", "USER");

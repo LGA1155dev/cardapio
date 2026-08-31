@@ -1,6 +1,20 @@
 import { useState, useEffect } from "react";
 import { authService } from "../services/api";
 
+const getAuthErrorMessage = (err, fallback = "Erro de conexão com servidor") => (
+  err.response?.data?.message ||
+  err.response?.data?.error ||
+  err.message ||
+  fallback
+);
+
+const isUserNotFoundError = (err) => err.response?.status === 404;
+
+const buildDefaultName = (email) => {
+  const prefix = String(email || "").split("@")[0].trim();
+  return prefix || "Usuário";
+};
+
 export function useAuth({ autoCheck = true } = {}) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,6 +30,11 @@ export function useAuth({ autoCheck = true } = {}) {
     const saved = localStorage.getItem("user");
 
     if (!token) {
+      if (!saved) {
+        setUser(null);
+        return false;
+      }
+
       try {
         await authService.refreshAccessToken();
       } catch {
@@ -63,26 +82,65 @@ export function useAuth({ autoCheck = true } = {}) {
 
   // Restaura sessão ao recarregar
   useEffect(() => {
-    if (autoCheck) checkAuth();
+    if (!autoCheck) return undefined;
+
+    let mounted = true;
+    setLoading(true);
+
+    checkAuth().finally(() => {
+      if (mounted) setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, [autoCheck]);
 
   async function login(email, password) {
     setLoading(true);
     setError("");
     try {
-      const response = await authService.login(email, password);
-      const { accessToken, usuario } = response.data;
-
-      if (!accessToken || !usuario) {
-        throw new Error("Resposta de login inválida");
-      }
-
-      authService.saveAuthData(accessToken, usuario);
-
+      const usuario = await authenticate(email, password);
       setUser(usuario);
       return true;
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Erro de conexão com servidor");
+      setError(getAuthErrorMessage(err));
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loginOrRegister(email, password) {
+    setLoading(true);
+    setError("");
+
+    try {
+      try {
+        const usuario = await authenticate(email, password);
+        setUser(usuario);
+        return true;
+      } catch (loginError) {
+        if (!isUserNotFoundError(loginError)) {
+          throw loginError;
+        }
+      }
+
+      if (password.length < 6) {
+        throw new Error("Use pelo menos 6 caracteres.");
+      }
+
+      await authService.register({
+        nome: buildDefaultName(email),
+        email,
+        senha: password,
+      });
+
+      const usuario = await authenticate(email, password);
+      setUser(usuario);
+      return true;
+    } catch (err) {
+      setError(getAuthErrorMessage(err));
       return false;
     } finally {
       setLoading(false);
@@ -99,19 +157,11 @@ export function useAuth({ autoCheck = true } = {}) {
         senha: password,
       });
 
-      const response = await authService.login(email, password);
-      const { accessToken, usuario } = response.data;
-
-      if (!accessToken || !usuario) {
-        throw new Error("Resposta de login inválida");
-      }
-
-      authService.saveAuthData(accessToken, usuario);
-
+      const usuario = await authenticate(email, password);
       setUser(usuario);
       return true;
     } catch (err) {
-      setError(err.response?.data?.message || err.message || "Erro de conexão com servidor");
+      setError(getAuthErrorMessage(err));
       return false;
     } finally {
       setLoading(false);
@@ -123,5 +173,17 @@ export function useAuth({ autoCheck = true } = {}) {
     setUser(null);
   }
 
-  return { user, setUser, loading, error, login, logout, checkAuth, registerAndLogin };
+  async function authenticate(email, password) {
+    const response = await authService.login(email, password);
+    const { accessToken, usuario } = response.data;
+
+    if (!accessToken || !usuario) {
+      throw new Error("Resposta de login inválida");
+    }
+
+    authService.saveAuthData(accessToken, usuario);
+    return usuario;
+  }
+
+  return { user, setUser, loading, error, login, loginOrRegister, logout, checkAuth, registerAndLogin };
 }

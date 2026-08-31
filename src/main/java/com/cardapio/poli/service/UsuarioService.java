@@ -2,8 +2,10 @@ package com.cardapio.poli.service;
 
 import com.cardapio.poli.model.Usuario;
 import com.cardapio.poli.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,9 +21,10 @@ public class UsuarioService {
     }
 
     public Usuario salvar(Usuario usuario) {
+        validarCadastro(usuario);
 
         if (repository.findByEmail(usuario.getEmail()).isPresent()) {
-            throw new RuntimeException("Email já cadastrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email já cadastrado");
         }
 
         usuario.setRole("USER");
@@ -59,10 +62,10 @@ public class UsuarioService {
 
     public Usuario autenticar(String email, String senha) {
         Usuario user = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
 
         if (!encoder.matches(senha, user.getSenha())) {
-            throw new RuntimeException("Senha inválida");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha inválida");
         }
 
         return user;
@@ -90,5 +93,30 @@ public class UsuarioService {
     private String nomePadrao(String email) {
         String prefixo = email == null ? "" : email.split("@")[0];
         return prefixo.isBlank() ? "Usuário" : prefixo;
+    }
+
+    private void validarCadastro(Usuario usuario) {
+        if (usuario.getNome() == null || usuario.getNome().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome é obrigatório");
+        }
+
+        if (usuario.getEmail() == null || usuario.getEmail().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email é obrigatório");
+        }
+
+        if (!usuario.getEmail().matches("^\\S+@\\S+\\.\\S+$")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email inválido");
+        }
+
+        if (usuario.getSenha() == null || usuario.getSenha().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha é obrigatória");
+        }
+
+        if (usuario.getSenha().length() < 6) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Use pelo menos 6 caracteres.");
+        }
+
+        usuario.setNome(usuario.getNome().trim());
+        usuario.setEmail(usuario.getEmail().trim());
     }
 }
