@@ -34,7 +34,12 @@ public class RefeicaoService {
 
 
     public void remover(Long Id){
+        try {
             repository.deleteById(Id);
+        } catch (Exception e){
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public Refeicao buscarPorId(Long id){
